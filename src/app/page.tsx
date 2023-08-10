@@ -62,12 +62,7 @@ const ChildInfo: React.FC<ChildInfoProps> = ({
         onChange={handleInputChange}
       />
       Jente
-      <Input
-        type="date"
-        name="testDate"
-        value={childInfo.testDate}
-        onChange={handleInputChange}
-      />
+
       <Input
         type="month"
         name="age"
@@ -95,21 +90,24 @@ const TestDetails: React.FC<TestDetailsProps> = ({
   <Row>
     {[...Array(5).keys()].map((col) => (
       <div key={col}>
-        {[...Array(10).keys()].map((row) => (
-          <div key={`col${col}row${row}`}>
+        {[...Array(10).keys()].map((row) => 
+          {
+            const label =               translateColumnIndexToQuestionSegment(col) +
+            (row + 1)
+          return <div key={`col${col}row${row}`}>
             <label>
-              {translateColumnIndexToQuestionSegment(col)}
-              {row}
+{label}
             </label>
             <Input
               type="text"
               maxLength={1}
-              name={`col${col}row${row}`}
-              value={testInput[`col${col}row${row}`] || ""}
+              name={label}
+              value={testInput[label] || ""}
               onChange={handleTestInputChange}
             />
           </div>
-        ))}
+          }
+        )}
       </div>
     ))}
   </Row>
@@ -145,6 +143,8 @@ const Page: React.FC = () => {
     e.preventDefault()
     console.log(childInfo, testInput)
   }
+
+  console.log(testInput)
 
   return (
     <FormWrapper>
