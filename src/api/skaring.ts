@@ -200,33 +200,33 @@ export class Skaring {
       case "A":
         if (this.gIsValidAE[1])
           this.gRawItemScoreString =
-            dataString.substr(0, 10) + nineString.substr(0, 40)
+            dataString.substring(0, 10) + nineString.substring(0, 40)
         break
       case "B":
         if (this.gIsValidAE[2])
           this.gRawItemScoreString =
-            nineString.substr(0, 10) +
-            dataString.substr(10, 10) +
-            nineString.substr(0, 30)
+            nineString.substring(0, 10) +
+            dataString.substring(10, 10) +
+            nineString.substring(0, 30)
         break
       case "C":
         if (this.gIsValidAE[3])
           this.gRawItemScoreString =
-            nineString.substr(0, 20) +
-            dataString.substr(20, 10) +
-            nineString.substr(0, 20)
+            nineString.substring(0, 20) +
+            dataString.substring(20, 10) +
+            nineString.substring(0, 20)
         break
       case "D":
         if (this.gIsValidAE[4])
           this.gRawItemScoreString =
-            nineString.substr(0, 30) +
-            dataString.substr(30, 10) +
-            nineString.substr(0, 10)
+            nineString.substring(0, 30) +
+            dataString.substring(30, 10) +
+            nineString.substring(0, 10)
         break
       case "E":
         if (this.gIsValidAE[5])
           this.gRawItemScoreString =
-            nineString.substr(0, 40) + dataString.substr(40, 10)
+            nineString.substring(0, 40) + dataString.substring(40, 10)
         break
       default:
         this.gRawItemScoreString = dataString
