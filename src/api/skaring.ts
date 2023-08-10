@@ -1,4 +1,4 @@
-class Skaring {
+export class Skaring {
   // System configurations
   sysDateFormat: string
   sysDecimal: string
