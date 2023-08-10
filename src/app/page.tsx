@@ -1,95 +1,171 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client"
+import React, { useState } from "react"
+import styled from "styled-components"
 
-export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
+const FormWrapper = styled.div`
+  /* Your styles here */
+`
+
+const Input = styled.input`
+  /* Your styles here */
+`
+
+const Button = styled.button`
+  /* Your styles here */
+`
+
+const Col = styled.div``
+
+const Row = styled.div`
+  display: flex;
+`
+
+interface ChildInfoProps {
+  childInfo: {
+    name: string
+    gender: string
+    testDate: string
+    age: string
+  }
+  setChildInfo: React.Dispatch<
+    React.SetStateAction<ChildInfoProps["childInfo"]>
+  >
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+const ChildInfo: React.FC<ChildInfoProps> = ({
+  childInfo,
+  handleInputChange,
+}) => (
+  <Col>
+    <Input
+      type="text"
+      placeholder="Navn"
+      name="name"
+      value={childInfo.name}
+      onChange={handleInputChange}
+    />
+    <Row>
+      <Input
+        type="radio"
+        name="gender"
+        value="boy"
+        checked={childInfo.gender === "boy"}
+        onChange={handleInputChange}
+      />
+      Gutt
+      <Input
+        type="radio"
+        name="gender"
+        value="girl"
+        checked={childInfo.gender === "girl"}
+        onChange={handleInputChange}
+      />
+      Jente
+      <Input
+        type="date"
+        name="testDate"
+        value={childInfo.testDate}
+        onChange={handleInputChange}
+      />
+      <Input
+        type="month"
+        name="age"
+        value={childInfo.age}
+        onChange={handleInputChange}
+      />
+    </Row>
+  </Col>
+)
+
+function translateColumnIndexToQuestionSegment(idx: number) {
+  const letters = "ABCDE"
+  return letters[idx]
+}
+
+interface TestDetailsProps {
+  testInput: { [key: string]: string }
+  handleTestInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+const TestDetails: React.FC<TestDetailsProps> = ({
+  testInput,
+  handleTestInputChange,
+}) => (
+  <Row>
+    {[...Array(5).keys()].map((col) => (
+      <div key={col}>
+        {[...Array(10).keys()].map((row) => (
+          <div key={`col${col}row${row}`}>
+            <label>
+              {translateColumnIndexToQuestionSegment(col)}
+              {row}
+            </label>
+            <Input
+              type="text"
+              maxLength={1}
+              name={`col${col}row${row}`}
+              value={testInput[`col${col}row${row}`] || ""}
+              onChange={handleTestInputChange}
             />
-          </a>
-        </div>
+          </div>
+        ))}
       </div>
+    ))}
+  </Row>
+)
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+function getDefaultChildInfo() {
+  return {
+    name: "",
+    gender: "",
+    testDate: new Date().toISOString().substring(0, 10),
+    age: new Date().toISOString().substring(0, 7),
+  }
+}
+
+const Page: React.FC = () => {
+  const [childInfo, setChildInfo] = useState(getDefaultChildInfo())
+  const [testInput, setTestInput] = useState<{ [key: string]: string }>({})
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChildInfo({ ...childInfo, [e.target.name]: e.target.value })
+  }
+
+  const handleTestInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTestInput({ ...testInput, [e.target.name]: e.target.value })
+  }
+
+  const handleClear = () => {
+    setChildInfo(getDefaultChildInfo())
+    setTestInput({})
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    console.log(childInfo, testInput)
+  }
+
+  return (
+    <FormWrapper>
+      <h1>Skåring av motoriske oppgaver i NUBU 4-16</h1>
+      <form onSubmit={handleSubmit}>
+        <ChildInfo
+          childInfo={childInfo}
+          handleInputChange={handleInputChange}
+          setChildInfo={setChildInfo}
         />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+        <TestDetails
+          testInput={testInput}
+          handleTestInputChange={handleTestInputChange}
+        />
+        <Button type="button" onClick={handleClear}>
+          Tøm skjema
+        </Button>
+        <Button type="submit">Vis resultat</Button>
+      </form>
+    </FormWrapper>
   )
 }
+
+export default Page
