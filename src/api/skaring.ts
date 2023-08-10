@@ -248,10 +248,8 @@ export class Skaring {
 
     this.gCalculateDebugOutput = "Beregner... vent litt...";
 
-    // Not sure about the exact translation of "send wrapMainCalculate to self",
-    // so commenting it out for now. You might need to replace this with appropriate logic.
-    // HARALD: DEN FÖLJANDE FUNKTIONEN ÄR INTE ÖVERSATT ÄN, DEN SKALL ÖVERSÄTTAS OCH KALLAS UPP HÄR.
-    // this.wrapMainCalculate();
+    // This is where calculation takes place: wrapMainCalculate() calls raschMeasureFromItems, the main calculating function.
+    this.wrapMainCalculate();
 
     switch (this.gResult) {
       case -10001:
@@ -350,7 +348,34 @@ export class Skaring {
 
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
 
+  wrapMainCalculate() {
+    // -- This is a wraparound command to run the raschMeasureFromItems function.
+    // -- It evaluates the result and puts it into the relevant variables.
+    this.gCalculateDebugOutput = "";
+    const result = this.raschMeasureFromItems(this.gRawItemScoreString);
+
+    if (typeof result === "number") {
+      this.gResult = result;
+    } else {
+      this.gResult = -10003;
+    }
+
+    this.gCalculateDebugOutput += `\n\nResult= ${result}`;
+    if (result === -10000) {
+      this.gCalculateDebugCurrentState = "Normal termination.";
+    } else {
+      this.gCalculateDebugCurrentState = `Did not terminate normally. Result= ${result}.`;
+    }
+  }
+
   raschMeasureFromItems(responseString: string): number {
+    // -- This is the main calculation script that calculates Rasch scale value and standard error estimate.
+    // -- The script returns a result parameter that is -10000 if successful.
+    // -- ==============================================================================
+    // -- If successful will put measure and SE, number of valid items, whether
+    // -- maximum or minimum estimated,
+    // -- in appropriate system variables.
+
     const keyString = "012";
     const nofItems = 50;
     const nofCats = 3;
@@ -542,6 +567,18 @@ export class Skaring {
 
     this.gMeasure = newM;
     this.gSE = 1 / Math.sqrt(expectedScoreVariance);
+
+    // HARALD: Reinserted debug text generation.
+    this.gCalculateDebugOutput =
+      "\n\n" +
+      "========== FINAL PERSON ESTIMATE ===========" +
+      "\n" +
+      "Rasch Ability Estimate = " +
+      this.gMeasure +
+      "Standard Error         = " +
+      this.gSE +
+      "\n\n" +
+      this.gCalculateDebugOutput;
 
     return -10000;
   }
