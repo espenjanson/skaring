@@ -25,7 +25,7 @@ interface ChildInfoProps {
     name: string
     gender: string
     testDate: string
-    age: string
+    alder: string
   }
   setChildInfo: React.Dispatch<
     React.SetStateAction<ChildInfoProps["childInfo"]>
@@ -36,8 +36,11 @@ interface ChildInfoProps {
 const ChildInfo: React.FC<ChildInfoProps> = ({
   childInfo,
   handleInputChange,
-}) => (
-  <Col>
+}) => {
+
+
+  console.log(childInfo.alder)
+  return <Col>
     <Input
       type="text"
       placeholder="Navn"
@@ -64,14 +67,22 @@ const ChildInfo: React.FC<ChildInfoProps> = ({
       Jente
 
       <Input
-        type="month"
-        name="age"
-        value={childInfo.age}
+        type="text"
+        name="alder.years"
+        value={childInfo.alder.split(":")[0] || ''}
+        onChange={handleInputChange}
+      />
+            <Input
+        type="text"
+        name="alder.months"
+        value={childInfo.alder.split(":")[1] || ''}
         onChange={handleInputChange}
       />
     </Row>
   </Col>
-)
+  
+}
+
 
 function translateColumnIndexToQuestionSegment(idx: number) {
   const letters = "ABCDE"
@@ -118,7 +129,7 @@ function getDefaultChildInfo() {
     name: "",
     gender: "",
     testDate: new Date().toISOString().substring(0, 10),
-    age: new Date().toISOString().substring(0, 7),
+    alder: "",
   }
 }
 
@@ -127,7 +138,23 @@ const Page: React.FC = () => {
   const [testInput, setTestInput] = useState<{ [key: string]: string }>({})
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setChildInfo({ ...childInfo, [e.target.name]: e.target.value })
+
+    setChildInfo(prevState => {
+      let value = e.target.value
+      let name = e.target.name
+
+    
+      if (e.target.name === "alder.years") {
+        name = "alder"
+
+        value = value + ":" + (prevState.alder.split(":")[1] || '')
+  
+      } else if (e.target.name === "alder.months") {
+        name = "alder"
+        value =  (prevState.alder.split(":")[0] ||'') + ":" + value
+      }
+
+      return {...childInfo, [name]: value }})
   }
 
   const handleTestInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

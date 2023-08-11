@@ -2,12 +2,8 @@ export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
 
   // System configurations
-  // HARALD: POÄNGEN MED DESSA KONFIGURATIONER SKULLE VARA ATT ANGE HUR DATUM, DECIMALTECKEN OCH LISTSEPARATOR PRINTAS OAVSETT SYSTEMINSTÄLLNINGAR.
-  // HARALD: HÄR SKER DET INGEN KONFIGURATION. sysDateFormat SKALL ANGE HUR PROGAMMET PRINTAR ETT DATUM, NÄMLIGEN "dd.mm.yyyy"
   sysDateFormat: string;
-  // HARALD: HÄR SKER DET INGEN KONFIGURATION. sysDateFormat SKALL ANGE HUR PROGAMMET PRINTAR DECIMALKARAKTÄREN, NÄMLIGEN "." (PUNKT).
   sysDecimal: string;
-  // HARALD: HÄR SKER DET INGEN KONFIGURATION. sysDateFormat SKALL ANGE HUR PROGAMMET PRINTAR LISTSEPARATORN, NÄMLIGEN "," (KOMMA).
   sysList: string;
 
   // Global variables
@@ -176,6 +172,12 @@ export class Skaring {
       },
       []
     );
+
+    // HARALD: MISSING USER-INTERFACE MAMIPULATION: THE INTERFACE SHOULD START DISPLAYING THE INPUT PAGE, AND THE STATE OF THE PAGE SHOULD BE LIKE
+    // AFTER HAVING STARTED A NEW FILE (A NEW CASE), THUS THE INPUT FIELDS/DATA SHOULD BE BLANK. IN OPENSCRIPT THIS WAS ACHIEVED BY THE FOLLOWING CODE
+    // WHICH SETS THE CURRENT PAGE TO THE "START" PAGE AND THEN CALLS THE SAME FUNCTION AS SELECTING "NEW FILE" FROM THE USER "FILE" MENU:
+    // currentPage of mainWindow = page "Start" of self
+    // send nyFil
   }
 
   // SECTION "-- ***************** PREPARATION OF OUTPUT ************************"
@@ -198,7 +200,7 @@ export class Skaring {
       // Using dummy value for fieldText for now
       const fieldText = "9";
 
-      // HARALD: "fieldtext.char" och "fieldText" I FÖLJANDE RAD BEHÖVER ÄNDRAS TILL ATT REFERERA TILL DATA:
+      // HARALD: "fieldtext" I FÖLJANDE RAD BEHÖVER ÄNDRAS TILL ATT REFERERA TILL DATA:
 
       dataString += fieldText.charAt(0) === "9" ? "9" : fieldText;
       if (dataString.charAt(dataString.length - 1) !== "9") {
@@ -248,7 +250,7 @@ export class Skaring {
 
     this.gCalculateDebugOutput = "Beregner... vent litt...";
 
-    // This is where calculation takes place: wrapMainCalculate() calls raschMeasureFromItems, the main calculating function.
+    // HARALD: This is where calculation takes place: wrapMainCalculate() calls raschMeasureFromItems, the main calculating function.
     this.wrapMainCalculate();
 
     switch (this.gResult) {
@@ -343,6 +345,8 @@ export class Skaring {
   }
 
   // SECTION "-- ***************** OUTPUT DISPLAY AND MANIPULATION ************************"
+  // HARALD: THIS SECTION CONTAINS SCRIPTS THAT PRODUCE, DISPLAY, AND MANIPULATE THE OUTPUT GRAPHIC(S). THEY ARE DEPENDENT ON BEING ABLE TO MANIPULATE
+  // GRAHPIC OUTPUT ELEMENTS. THESE SCRIPTS HAVE NOT YET BEEN TRANSLATED.
 
   // SECTION "-- ***************** FILE READING AND WRITING ************************"
 
@@ -759,6 +763,8 @@ export class Skaring {
     return -1;
   }
 
+  // SECTION "-- ***************** GENERAL ERROR HANDLING ************************"
+
   hj_error(theIn: string): void {
     // A simple error handler that beeps, displays an error message, and then breaks the execution to system.
     // The beep functionality is replaced with a browser alert. The browser does not have a native beep functionality,
@@ -772,3 +778,38 @@ export class Skaring {
     throw new Error(theIn); // Throw an error to halt execution
   }
 }
+
+// SCRIPTS OF SEPARATE OBJECTS IN OPENSCRIPT -- THESE CAME AFTER THE "SECTIONED" PART IN THE DOCUMENT
+//
+// HARALD: The functionality of the scripts "to handle enterfield" and "to handle leavefield" of page "Start" (the input page)
+// was to keep track of whether data had changed by user input. If any of the inputtable data had changed since last saved,
+// the global variable currentFileIsSaved changed from TRUE to FALSE. This mattered for file saving - if the user wanted
+// to close the program, or open another file, or start a new file, the user would be prompted for saving the data before proceeding if
+// the data had changed.
+//
+// The "to handle buttonClick" handle of the button with name "Beregn" on page id 1 (page "Start") had the functionality to
+// make the program prepare data for output, perform all calculations, and display output. This was achieved by:
+// 1. Setting the global variable gUseItemSubset to "All" so results should be calculated based on all items;
+// 2. sending the command (i.e., calling the function) "prepareInputForOutput" which in turn would trigger all the actions needed.
+//
+// The "to handle buttonClick" handle of the button with name "Toem" on page id 1 (page "Start") had the functionality to
+// empty all data and set the global variable "gAlder" which represents the age of the child to the missing value -9999
+//
+// HARALD: The field "alder" of the page "Start" had two handlers: "on enterField" and "on leaveField". This is important
+// functionality for the program results - this is the functionality that converts the age from the input and display format
+// in years:months (e.g., like "6:1") to a number. The functionality of the scripts did the following:
+// When a user entered the field, i.e., started editing it (by tabbing to it or clicking on it), the global variable
+// that represents the age of the child in machine format, gAlder, was set to the missing value -9999.
+// And when a user left the field, i.e., finished editing it by tabbing out of it or clicking elsewhere on the page,
+// the contents of the field were validated. Valid formats could be "" (a NULL string) or the "6:1" format where the first
+// integer should represent a reasonable year, say, between 1 and 10, and the second integer should represent a month,
+// i.e. minimum 0 and maximum 11. If an invalid value was given, the user should be alerted and told how to input age. Further
+// execution was stopped, so that if the user i.e. had clicked the button to show results, nothing would happen except the
+// alert for wrong input. Validity of text was checked by passing the text of the field to the function "yearMonthToDec" which would
+// return a number only if the input was valid. This function is defined in the current code.
+//
+// The page "PrintPage1", the output display, had a "to handle enterPage" handler. This would be activated when the page
+// was opened, i.e., when the page was displayed. It sent three commands (i.e., called three functions) in turn, namely:
+//	send toggleCalcAE // which manipulates the way meny items are displayed based on the contents of the global array gIsValidAE[]
+//	send adjustShowRasch // which manipuletes the way a menu item is displayed based on the global variable "svShowRasch"
+//	send setGraph 0 // which is the script that contains the main functionality for creating/displaying the output (0 is a parameter)
