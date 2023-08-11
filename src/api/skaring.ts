@@ -1,10 +1,73 @@
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
 
-  // System configurations
-  sysDateFormat: string;
-  sysDecimal: string;
-  sysList: string;
+  G_MODEL_PERCENTILES = [
+    [-4.2, 0],
+    [-2.5, 1],
+    [-2.05, 1],
+    [-1.4, 1],
+    [-1.35, 2],
+    [-1.3, 4],
+    [-1.2, 4],
+    [-1.15, 6],
+    [-1.1, 6],
+    [-1.05, 7],
+    [-1, 9],
+    [-0.95, 10],
+    [-0.9, 11],
+    [-0.85, 13],
+    [-0.8, 14],
+    [-0.75, 16],
+    [-0.7, 18],
+    [-0.65, 19],
+    [-0.6, 21],
+    [-0.55, 22],
+    [-0.5, 24],
+    [-0.45, 26],
+    [-0.4, 28],
+    [-0.35, 31],
+    [-0.3, 34],
+    [-0.25, 35],
+    [-0.2, 39],
+    [-0.15, 42],
+    [-0.1, 44],
+    [-0.05, 48],
+    [0, 52],
+    [0.05, 54],
+    [0.1, 56],
+    [0.15, 58],
+    [0.2, 63],
+    [0.25, 66],
+    [0.3, 69],
+    [0.35, 72],
+    [0.4, 75],
+    [0.45, 78],
+    [0.5, 80],
+    [0.55, 81],
+    [0.6, 83],
+    [0.65, 85],
+    [0.7, 87],
+    [0.75, 88],
+    [0.8, 88],
+    [0.85, 89],
+    [0.9, 89],
+    [0.95, 90],
+    [1, 92],
+    [1.05, 93],
+    [1.1, 94],
+    [1.15, 94],
+    [1.25, 95],
+    [1.3, 96],
+    [1.4, 96],
+    [1.55, 97],
+    [1.65, 97],
+    [1.7, 98],
+    [1.75, 99],
+    [2, 99],
+    [2.05, 99],
+    [2.1, 100],
+    [3, 100],
+  ];
 
   // Global variables
   currentFile: string | null;
@@ -28,19 +91,14 @@ export class Skaring {
   gUseItemSubset: string;
   gIsValidAE: boolean[];
   gAlder: number;
-  gModelPercentiles: number[][];
   gAgeGroupLabels: string[];
   gAgeGroupThresholds: number[][];
   gItemLabels: string[];
 
   constructor() {
-    // System configurations
-    this.sysDateFormat = "dd.mm.yyyy";
-    this.sysDecimal = ".";
-    this.sysList = ",";
-
     // Global variables
     this.currentFile = null;
+    // Interface altering vars
     this.currentFileIsSaved = true;
     this.svShowRasch = false;
 
@@ -62,75 +120,6 @@ export class Skaring {
     this.gUseItemSubset = "All";
     this.gIsValidAE = [false, false, false, false, false];
     this.gAlder = -9999;
-
-    // Model Percentiles
-    this.gModelPercentiles = [
-      [-4.2, 0],
-      [-2.5, 1],
-      [-2.05, 1],
-      [-1.4, 1],
-      [-1.35, 2],
-      [-1.3, 4],
-      [-1.2, 4],
-      [-1.15, 6],
-      [-1.1, 6],
-      [-1.05, 7],
-      [-1, 9],
-      [-0.95, 10],
-      [-0.9, 11],
-      [-0.85, 13],
-      [-0.8, 14],
-      [-0.75, 16],
-      [-0.7, 18],
-      [-0.65, 19],
-      [-0.6, 21],
-      [-0.55, 22],
-      [-0.5, 24],
-      [-0.45, 26],
-      [-0.4, 28],
-      [-0.35, 31],
-      [-0.3, 34],
-      [-0.25, 35],
-      [-0.2, 39],
-      [-0.15, 42],
-      [-0.1, 44],
-      [-0.05, 48],
-      [0, 52],
-      [0.05, 54],
-      [0.1, 56],
-      [0.15, 58],
-      [0.2, 63],
-      [0.25, 66],
-      [0.3, 69],
-      [0.35, 72],
-      [0.4, 75],
-      [0.45, 78],
-      [0.5, 80],
-      [0.55, 81],
-      [0.6, 83],
-      [0.65, 85],
-      [0.7, 87],
-      [0.75, 88],
-      [0.8, 88],
-      [0.85, 89],
-      [0.9, 89],
-      [0.95, 90],
-      [1, 92],
-      [1.05, 93],
-      [1.1, 94],
-      [1.15, 94],
-      [1.25, 95],
-      [1.3, 96],
-      [1.4, 96],
-      [1.55, 97],
-      [1.65, 97],
-      [1.7, 98],
-      [1.75, 99],
-      [2, 99],
-      [2.05, 99],
-      [2.1, 100],
-      [3, 100],
-    ];
 
     // Age Group Labels
     this.gAgeGroupLabels = [
@@ -182,7 +171,8 @@ export class Skaring {
 
   // SECTION "-- ***************** PREPARATION OF OUTPUT ************************"
 
-  prepareInputForOutput(argA: string): void {
+  // This is where inputs come in
+  prepareInputForOutput(formFieldValues: Record<string, string>): void {
     const minValidItems = 3;
     const nineString = "9999999999999999999999999999999999999999999999999999";
     let dataString = "";
@@ -596,21 +586,21 @@ export class Skaring {
     // corresponding percentile value.
     theIn = Math.round(theIn * 20) / 20;
 
-    const antallTabellrader = this.gModelPercentiles.length;
+    const antallTabellrader = this.G_MODEL_PERCENTILES.length;
 
-    if (theIn <= this.gModelPercentiles[0][0]) {
-      return this.gModelPercentiles[0][1];
+    if (theIn <= this.G_MODEL_PERCENTILES[0][0]) {
+      return this.G_MODEL_PERCENTILES[0][1];
     }
 
     let ctrJ = 1;
     while (
-      theIn > this.gModelPercentiles[ctrJ][0] &&
+      theIn > this.G_MODEL_PERCENTILES[ctrJ][0] &&
       ctrJ < antallTabellrader - 1
     ) {
       ctrJ++;
     }
 
-    return this.gModelPercentiles[ctrJ][1];
+    return this.G_MODEL_PERCENTILES[ctrJ][1];
   }
 
   LText(theIn: string, nofChars: number): string {
