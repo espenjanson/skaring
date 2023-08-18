@@ -32,6 +32,8 @@ export class Skaring {
   gAgeGroupLabels: string[];
   gAgeGroupThresholds: number[][];
   gItemLabels: string[];
+  versionString: string;
+  aItemDifficulties: number[];
 
   constructor() {
     // System configurations
@@ -62,6 +64,15 @@ export class Skaring {
     this.gUseItemSubset = "All";
     this.gIsValidAE = [false, false, false, false, false];
     this.gAlder = -9999;
+    this.versionString = "NUBUMotor_101";
+
+    this.aItemDifficulties = [
+      -1.94, -1.38, -1.22, -0.68, -0.15, -0.36, 0.43, 1.27, 2.24, 2.06, -2.76,
+      -1.7, -1.02, -0.8, -0.29, 0.37, 1.05, 1.33, 1.61, 2.23, -2.54, -2.33,
+      -1.72, -1.59, -1.35, -0.08, -0.37, 1.6, 1.49, 1.49, -2.82, -1.89, -0.83,
+      -0.22, -0.26, -0.12, 1.31, 1.62, 1.93, 2.4, -1.54, -1.43, -1.04, 0.21,
+      0.89, 1.19, 1.25, 1.34, 1.19, 1.94,
+    ];
 
     // Model Percentiles
     this.gModelPercentiles = [
@@ -345,8 +356,500 @@ export class Skaring {
   }
 
   // SECTION "-- ***************** OUTPUT DISPLAY AND MANIPULATION ************************"
-  // HARALD: THIS SECTION CONTAINS SCRIPTS THAT PRODUCE, DISPLAY, AND MANIPULATE THE OUTPUT GRAPHIC(S). THEY ARE DEPENDENT ON BEING ABLE TO MANIPULATE
-  // GRAHPIC OUTPUT ELEMENTS. THESE SCRIPTS HAVE NOT YET BEEN TRANSLATED.
+  // HARALD: THIS SECTION CONTAINS SCRIPTS THAT PRODUCE, DISPLAY, AND MANIPULATE THE OUTPUT GRAPHIC(S).
+
+  // HARALD: FOR THE "redrawAll" SCRIPT TO WORK, THE FOLLOWING FUNCTIONS NEED TO BE DEFINED. I AM GIVING
+  // DEFINITIONS AND THE OPENSCRIPT CONTENTS - MUST WRITE TYPESCRIPT FUNCTIONS THAT MANIPULATE OUTPUT
+  // GRAPHIC ELEMENTS IN THE SAME WAY.
+  setFieldText(fieldName: string, newText: string): void {
+    //text of field (fieldName) of page "PrintPage1"  = newText
+  }
+  setFieldPosition(
+    fieldName: string,
+    newPosition: { x: number; y: number }
+  ): void {
+    // position of field (fieldName) of page "PrintPage1"  = newPosition;
+  }
+  setFieldVisibility(fieldName: string, isVisible: boolean): void {
+    // visible of field (fieldName) of page "PrintPage1"  = isVisible
+  }
+  setFieldVertices(
+    fieldName: string,
+    newVertices: { x1: number; y1: number; x2: number; y2: number }
+  ): void {
+    //vertices of field (fieldName) of page "PrintPage1"  = newVertices
+  }
+  setFieldStrokeColor(fieldName: string, newColor: string): void {
+    // HARALD: NOTE: PARAMETER "NEWCOLOR" TAKES A COLOR CONSTANT LIKE "black" OR "lightGray" IN OPENSCRIPT
+    // strokeColor of field (fieldName) of page "PrintPage1"  = newColor
+  }
+  setLastWordBold(fieldName: string, isBold: boolean): void {
+    if (isBold === true) {
+      //fontStyle of last word of text of field (fieldName) of page "PrintPage1" = bold
+    } else {
+      //fontStyle of last word of text of field (fieldName) of page "PrintPage1" = regular
+    }
+  }
+  setLinePosition(
+    lineName: string,
+    newPosition: { x: number; y: number }
+  ): void {
+    // position of line (lineName) of page "PrintPage1"  = newPosition
+  }
+  setLineVertices(
+    lineName: string,
+    newVertices: { x1: number; y1: number; x2: number; y2: number }
+  ): void {
+    // vertices of line (lineName) of page "PrintPage1"  = newVertices
+  }
+  setLineVisibility(lineName: string, isVisible: boolean): void {
+    // visible of line (lineName) of page "PrintPage1"  = isVisible; return 1
+  }
+
+  setRectangleVertices(
+    rectangleName: string,
+    newVertices: { x1: number; y1: number; x2: number; y2: number }
+  ): void {
+    // vertices of rectangle (rectangleName) of page "PrintPage1"  = newVertices; return 1
+  }
+  setRectangleVisibility(rectangleName: string, isVisible: boolean): void {
+    // visible of rectangle (rectangleName) of page "PrintPage1"  = isVisible; return 1
+  }
+
+  setGraph(redrawAll: number): void {
+    // This is the script that manipulates the objects on the output page
+    let minage: number, maxage: number, minMeasure: number, maxMeasure: number;
+    let maxPU: number, minPU: number, leftPU: number, rightPU: number;
+    let maxPT: number, minPT: number, leftPT: number, rightPT: number;
+    const promptoffset: number = 100;
+
+    let showRaschMeasure: boolean;
+    // HARALD: This has been simplified. In OpenScript, I checked if "sysLevel" was "reader", i.e.
+    // if the program was running/executing. If not, I set showRaschMeasure to "true" anyway. Here,
+    // I am assuming that the program is running.
+    showRaschMeasure = this.svShowRasch;
+
+    // These next lines were static assignments in the original script.
+    // I'm interpreting them as fixed assignments here.
+    // The first assignment should be to the coordinates of the object "rectangleGraph" in the
+    // output display. The point is that by getting the coordinates, all other elements can be
+    // properly adjusted.
+    // In OpenScript, the dynamic assignment was:
+    // get vertices of rectangle "Graph1" of page "PrintPage1"
+    let rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
+
+    // HARALD: Similarly, the point of the next assignment is to get the rectangle coordinates
+    // for proper adjustment of text fields. In OpenScript, the corresponding dynamic statement
+    // was:
+    // get vertices of rectangle "TextAlignField" of page "PrintPage1"
+    let rectangleTextAlign = { x1: 3108, y1: 8262, x2: 8460, y2: 13977 };
+
+    maxPU = rectangleGraph.y1;
+    minPU = rectangleGraph.y2;
+    leftPU = rectangleGraph.x1;
+    rightPU = rectangleGraph.x2;
+
+    maxPT = rectangleTextAlign.y1;
+    minPT = rectangleTextAlign.y2;
+    leftPT = rectangleTextAlign.x1;
+    rightPT = rectangleTextAlign.x2;
+
+    minage = this.gMinEstAge;
+    maxage = this.gMaxEstAge;
+    minMeasure = this.ageToMeasure(
+      minage,
+      this.gConvertParameter1,
+      this.gConvertParameter2
+    );
+    maxMeasure = this.ageToMeasure(
+      maxage,
+      this.gConvertParameter1,
+      this.gConvertParameter2
+    );
+
+    const ageLinesMeasure = [
+      -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0,
+      2.5, 3.0, 3.5, 4.0,
+    ];
+    const ageLines = [3.5, 4.0, 4.5, 5.0, 5.5, 6, 7, 8, 9, 10, 12, 14, 16, 18];
+    const agePrompts = [
+      "3:6",
+      "4:0",
+      "4:6",
+      "5:0",
+      "5:6",
+      "6:0",
+      "7:0",
+      "8:0",
+      "9:0",
+      "10:0",
+      "12:0",
+      "14:0",
+      "16:0",
+      "18:0",
+    ];
+
+    if (redrawAll !== 0) {
+      // Note: The case "redrawAll" !== 0" does not happen triggered by code. It can be called by the
+      // developer to adjust all the positions and other properties that are called. Among other things,
+      // this should align the positions and sizes of fields, lines and rectangles to fit with the
+      // bounds of the rectangles defined above. It might be handy. Note that after running this,
+      // some item information fields will be on top of each other or too close to each other. Those
+      // must be adjusted manually.
+      // Depending on how we build the graphic output elements, we may not want to
+      // use this part at all!.
+
+      // Sets prompts texts
+      // HARALD: In the following, we really need to know the height of each field item_1 to item_50 to preserve
+      // field height. For now, I am just setting the field height to the constant of 192 which was the
+      // OpenScript/ToolBook height of field item_1 as well as of field item_50.
+      const localFieldHeight = 192;
+      for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
+        this.setFieldText("item_" + (ctrJ + 1), this.gItemLabels[ctrJ]);
+        const fieldPos = {
+          x: Math.trunc((ctrJ - 0.5) / 10) * 0.2 * (rightPT - leftPT) + leftPT,
+          y:
+            this.YPUFromMeasure(
+              this.aItemDifficulties[ctrJ],
+              minMeasure,
+              maxMeasure,
+              maxPT,
+              minPT
+            ) -
+            localFieldHeight / 2,
+        };
+        this.setFieldPosition("item_" + (ctrJ + 1), fieldPos);
+      }
+
+      for (let ctrJ = 0; ctrJ < ageLines.length; ctrJ++) {
+        if (ageLines[ctrJ] >= minage && ageLines[ctrJ] <= maxage) {
+          this.setLineVisibility("ageline" + (ctrJ + 1), true);
+          this.setFieldVisibility("ageprompt" + (ctrJ + 1), true);
+
+          const lineVertices = {
+            x1: leftPU,
+            y1: this.YPUFromMeasure(
+              this.ageToMeasure(
+                ageLines[ctrJ],
+                this.gConvertParameter1,
+                this.gConvertParameter2
+              ),
+              minMeasure,
+              maxMeasure,
+              maxPU,
+              minPU
+            ),
+            x2: rightPU,
+            y2: this.YPUFromMeasure(
+              this.ageToMeasure(
+                ageLines[ctrJ],
+                this.gConvertParameter1,
+                this.gConvertParameter2
+              ),
+              minMeasure,
+              maxMeasure,
+              maxPU,
+              minPU
+            ),
+          };
+          this.setLineVertices("ageline" + (ctrJ + 1), lineVertices);
+          // HARALD: In the next lines, I really wanted to dynamically get the width of the
+          // ageprompt fields (there are 13 or so of them). For now, I am just setting the
+          // width to 708, which was the OpenScript/ToolBook width.
+          const localFieldwidth = 708;
+          const fieldPos = {
+            x: leftPU - localFieldwidth - promptoffset,
+            y: this.YPUFromMeasure(
+              this.ageToMeasure(
+                ageLines[ctrJ],
+                this.gConvertParameter1,
+                this.gConvertParameter2
+              ),
+              minMeasure,
+              maxMeasure,
+              maxPU,
+              minPU
+            ),
+          };
+          this.setFieldPosition("ageprompt" + (ctrJ + 1), fieldPos);
+
+          this.setFieldText("ageprompt" + (ctrJ + 1), agePrompts[ctrJ]);
+        } else {
+          this.setLineVisibility("ageline" + (ctrJ + 1), false);
+          this.setFieldVisibility("ageprompt" + (ctrJ + 1), false);
+        }
+      }
+
+      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+        if (
+          ageLinesMeasure[ctrJ] >= minMeasure &&
+          ageLinesMeasure[ctrJ] <= maxMeasure
+        ) {
+          // repositions and shows tick lines and measure prompts if measure is within min and max measure range.
+          let fieldPos = {
+            x: rightPU,
+            y: this.YPUFromMeasure(
+              ageLinesMeasure[ctrJ],
+              minMeasure,
+              maxMeasure,
+              maxPU,
+              minPU
+            ),
+          };
+          this.setLinePosition("measureTick" + (ctrJ + 1), fieldPos);
+          this.setLineVisibility("measureTick" + (ctrJ + 1), true);
+          // HARALD: In the next lines, I really wanted to dynamically get the width of the
+          // measureprompt fields (there are 17 or so of them). For now, I am just setting the
+          // width to 350, which was the OpenScript/ToolBook width.
+          // Similarly, setting the height to 228.
+          const localFieldwidth = 350;
+          const localFieldHeight = 228;
+          fieldPos = {
+            x: rightPU + localFieldwidth,
+            y:
+              this.YPUFromMeasure(
+                ageLinesMeasure[ctrJ],
+                minMeasure,
+                maxMeasure,
+                maxPU,
+                minPU
+              ) - localFieldHeight,
+          };
+          this.setFieldPosition("measureprompt" + (ctrJ + 1), fieldPos);
+          this.setFieldVisibility("measureprompt" + (ctrJ + 1), true);
+          this.setFieldText(
+            "measureprompt" + (ctrJ + 1),
+            "" + ageLinesMeasure[ctrJ]
+          );
+        } else {
+          // hides tick lines and measure prompts if out of min and max measure range.
+          this.setLineVisibility("measureTick" + (ctrJ + 1), false);
+          this.setFieldVisibility("measureprompt" + (ctrJ + 1), false);
+        }
+      }
+      // End of "redrawAll" clause.
+    }
+
+    // Here begins the normal redraw of elements, which occurs every time the output display is
+    // readjusted. The following code manipulates the visibility of the Rasch
+    // scale ticks and prompts, the item information fields, the estimate line, and the
+    // confidence interval rectangle.
+    if (showRaschMeasure) {
+      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+        if (
+          ageLinesMeasure[ctrJ] >= minMeasure &&
+          ageLinesMeasure[ctrJ] <= maxMeasure
+        ) {
+          this.setFieldVisibility("measureprompt" + (ctrJ + 1), true);
+          this.setLineVisibility("measureTick" + (ctrJ + 1), true);
+        }
+      }
+      this.setFieldVisibility("measureprompt_", true);
+    } else {
+      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+        this.setFieldVisibility("measureprompt" + (ctrJ + 1), false);
+        this.setLineVisibility("measureTick" + (ctrJ + 1), false);
+      }
+      this.setFieldVisibility("measureprompt_", false);
+    }
+
+    // information fields
+    // HARALD: Here, we need to get the data for the fields "navn" and "alder". I am
+    // putting text constants into local variables for now; this should be changed to actual data.
+    let navn_value = "Ola Normann";
+    let alder_value = "5:1";
+    this.setFieldText("navn", navn_value);
+    this.setFieldText("alder", alder_value);
+    // HARALD: Likewise, we need to get the data for the "gutt" and "jente" choices.
+    // (They are two boolean values. Both can be false, but only one or the other can be true.)
+    // I am setting the value into local variables for now. Need to fill with actual data.
+    let gutt_value: boolean;
+    gutt_value = true;
+    let jente_value: boolean;
+    jente_value = false;
+
+    if (gutt_value === true) {
+      this.setFieldText("led_kjonn", "Kjønn:\tGutt");
+    } else {
+      if (jente_value === false) {
+        this.setFieldText("led_kjonn", "");
+      } else {
+        this.setFieldText("led_kjonn", "Kjønn:\tJente");
+      }
+    }
+
+    // estimate line
+    if (this.gMeasure !== -9999) {
+      const estimateLineVertices = {
+        x1: leftPU,
+        y1: this.YPUFromMeasure(
+          this.gMeasure,
+          minMeasure,
+          maxMeasure,
+          maxPU,
+          minPU
+        ),
+        x2: rightPT,
+        y2: this.YPUFromMeasure(
+          this.gMeasure,
+          minMeasure,
+          maxMeasure,
+          maxPU,
+          minPU
+        ),
+      };
+      this.setLineVertices("estimateline", estimateLineVertices);
+      this.setLineVisibility("estimateline", true);
+    } else {
+      this.setLineVisibility("estimateline", false);
+    }
+
+    // confidence interval rectangle
+    if (this.gSE !== -9999 && !this.gIsMinEstimated && !this.gIsMaxEstimated) {
+      const ciRectangleVertices = {
+        x1: leftPU,
+        y1: this.YPUFromMeasure(
+          this.gMeasure + 1.96 * this.gSE,
+          minMeasure,
+          maxMeasure,
+          maxPU,
+          minPU
+        ),
+        x2: rightPU,
+        y2: this.YPUFromMeasure(
+          this.gMeasure - 1.96 * this.gSE,
+          minMeasure,
+          maxMeasure,
+          maxPU,
+          minPU
+        ),
+      };
+      this.setRectangleVertices("CI", ciRectangleVertices);
+      this.setRectangleVisibility("CI", true);
+    } else {
+      this.setRectangleVisibility("CI", false);
+    }
+
+    // item information fields
+    for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
+      if ("012".indexOf(this.gRawItemScoreString[ctrJ]) === -1) {
+        this.setFieldText("item_" + (ctrJ + 1), this.gItemLabels[ctrJ]);
+        this.setFieldStrokeColor("item_" + (ctrJ + 1), "lightGray");
+      } else {
+        this.setFieldText(
+          "item_" + (ctrJ + 1),
+          this.gItemLabels[ctrJ] + " (" + this.gRawItemScoreString[ctrJ] + ")"
+        );
+        this.setFieldStrokeColor("item_" + (ctrJ + 1), "black");
+        this.setLastWordBold("item_" + (ctrJ + 1), true);
+      }
+    }
+
+    // text field with numeric results
+    // ... [Additional code that builds a text output and manipulates graphical elements.]
+
+    let vOutput: string = "";
+
+    switch (this.gUseItemSubset) {
+      case "A":
+        vOutput +=
+          "================ Beregnet bare ut fra A-oppgaver ================\n\n";
+        break;
+      case "B":
+        vOutput +=
+          "================ Beregnet bare ut fra B-oppgaver ================\n\n";
+        break;
+      case "C":
+        vOutput +=
+          "================ Beregnet bare ut fra C-oppgaver ================\n\n";
+        break;
+      case "D":
+        vOutput +=
+          "================ Beregnet bare ut fra D-oppgaver ================\n\n";
+        break;
+      case "E":
+        vOutput +=
+          "================ Beregnet bare ut fra E-oppgaver ================\n\n";
+        break;
+      default:
+        vOutput +=
+          "=================================================================\n";
+    }
+
+    vOutput +=
+      "Samleskår (Aldersekvivalent):    " +
+      this.estimateToPresentText(this.gMeasure) +
+      "\n\n";
+
+    if (this.gSE !== -9999 && !this.gIsMinEstimated && !this.gIsMaxEstimated) {
+      vOutput +=
+        "95% konfidensintervall fra:      " +
+        this.estimateToPresentText(this.gMeasure - 1.96 * this.gSE) +
+        "\n";
+      vOutput +=
+        "                       til:      " +
+        this.estimateToPresentText(this.gMeasure + 1.96 * this.gSE) +
+        "\n\n";
+    } else {
+      if (this.gIsMinEstimated) {
+        vOutput +=
+          "Alle oppgaver er skåret 0. Konfidensintervall kan ikke beregnes.\n\n";
+      } else if (this.gIsMaxEstimated) {
+        vOutput +=
+          "Alle oppgaver er skåret 2. Konfidensintervall kan ikke beregnes.\n\n";
+      } else {
+        vOutput += "Konfidensintervall kan ikke beregnes.\n\n";
+      }
+    }
+
+    if (this.gAlder !== -9999) {
+      // HARALD: Note. The constant "alder_value" below, which contains the display value of the
+      // input data field "alder", should be changed to display dynamically the data of the
+      // data field "alder".
+      vOutput +=
+        "Skåren tilsvarer " +
+        this.modellpersentilFraEstimat(
+          this.gMeasure -
+            this.ageToMeasure(
+              this.gAlder,
+              this.gConvertParameter1,
+              this.gConvertParameter2
+            )
+        ) +
+        ". persentilen av barn på alderen " +
+        alder_value +
+        " basert på\n" +
+        "den statistiske modellen.\n\n";
+    } else {
+      vOutput += "Persentil basert på statistisk modell kan ikke beregnes.\n\n";
+    }
+
+    vOutput +=
+      "=================================================================\n" +
+      this.aldersgruppepersentilerFraEstimat(this.gMeasure);
+
+    if (showRaschMeasure) {
+      vOutput +=
+        "=================================================================\n";
+      vOutput +=
+        "Samleskår (Rasch-skår)    :     " + this.gMeasure.toFixed(2) + "\n";
+
+      if (
+        this.gSE !== -9999 &&
+        !this.gIsMinEstimated &&
+        !this.gIsMaxEstimated
+      ) {
+        vOutput +=
+          "Standardfeil              :     " + this.gSE.toFixed(2) + "\n";
+      } else {
+        vOutput += "Standardfeil for skåren kan ikke beregnes.\n";
+      }
+    }
+
+    vOutput +=
+      "=================================================================\n";
+    this.setFieldText("output", vOutput);
+  }
 
   // SECTION "-- ***************** FILE READING AND WRITING ************************"
 
@@ -383,10 +886,6 @@ export class Skaring {
     const keyString = "012";
     const nofItems = 50;
     const nofCats = 3;
-    const aItemDifficulties: number[] =
-      "-1.94,-1.38,-1.22,-0.68,-0.15,-0.36,0.43,1.27,2.24,2.06,-2.76,-1.7,-1.02,-0.8,-0.29,0.37,1.05,1.33,1.61,2.23,-2.54,-2.33,-1.72,-1.59,-1.35,-0.08,-0.37,1.6,1.49,1.49,-2.82,-1.89,-0.83,-0.22,-0.26,-0.12,1.31,1.62,1.93,2.4,-1.54,-1.43,-1.04,0.21,0.89,1.19,1.25,1.34,1.19,1.94"
-        .split(",")
-        .map(parseFloat);
     const aCatDifficulties: number[] = "0,-.39,.39".split(",").map(parseFloat);
     const maxIterations = 500;
     const convergence = 0.001;
@@ -429,7 +928,7 @@ export class Skaring {
         thisItemCompleted[i] = true;
         nofCompletedItems++;
         rawScore += charIndex;
-        dMean += aItemDifficulties[i];
+        dMean += this.aItemDifficulties[i];
       }
     }
 
@@ -517,7 +1016,7 @@ export class Skaring {
             partDenomPnij += aCatDifficulties[k];
           }
           denomPnij += Math.exp(
-            h * (oldM - aItemDifficulties[i]) - partDenomPnij
+            h * (oldM - this.aItemDifficulties[i]) - partDenomPnij
           );
         }
 
@@ -530,7 +1029,8 @@ export class Skaring {
             enumPnij += aCatDifficulties[k];
           }
           const Pnij =
-            Math.exp(j * (oldM - aItemDifficulties[i]) - enumPnij) / denomPnij;
+            Math.exp(j * (oldM - this.aItemDifficulties[i]) - enumPnij) /
+            denomPnij;
           expectedScore += j * Pnij;
           expectedScoreVariance1 += j ** 2 * Pnij;
           expectedScoreVariance2 += j * Pnij;
