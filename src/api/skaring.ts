@@ -356,7 +356,53 @@ export class Skaring {
   }
 
   // SECTION "-- ***************** OUTPUT DISPLAY AND MANIPULATION ************************"
+
   // HARALD: THIS SECTION CONTAINS SCRIPTS THAT PRODUCE, DISPLAY, AND MANIPULATE THE OUTPUT GRAPHIC(S).
+
+  // HARALD: THE SCRIPTS THAT HAVE BEEN INSERTED BELOW MANIPULATE THE OUTPUT DISPLAY.
+  // HOWEVER, SEVERAL SCRIPTS THAT TAKE USER INPUT (VIA MENU CHOICES), SET SYSTEM VARIABLES THAT
+  // MODIFY THE OUTPUT, OPENS/CLOSES THE OUTPUT WINDOW, AND CALLS THE SETGRAPH FUNCTION BELOW, HAVE NOT
+  // BEEN TRANSLATED, AS THEY SEEM VERY SPECIFIC TO TOOLBOOK AND NEED TO BE REPLACED WITH THE
+  // CORRESPONDING FUNCTIONALITY. THE NON-TRANSLATED FUNCTIONS ARE:
+  //
+  // openPrintPreview // opens the output window/display, and calls the prepareInputForOutput function
+  //
+  // closePrintPreview // closes the output window
+  //
+  // printResults // sends the graphic output display to the predefined system printer, that is,
+  // prints the output that is displayed in the output window. (The program also had the functionality
+  // to print the output without previewing it first, so this function could be called from the input
+  // window)
+  //
+  // toggleShowRasch // toggled the "Vise Rasch-skår" option - setting the svShowRash system variable,
+  // and adjusted the corresponding menu choice accordingly
+  //
+  // adjustShowRasch // not to be confused with the previous; this function got the value of svShowRash
+  // system variable, and adjusted the corresponding menu choice accordingly. (This function could be
+  // called by the program to adjust the menu choices, without user input.)
+  //
+  // The following functions set the options for what data were used for generating the output. The
+  // options were "All data", "Only A items", "Only B items", "Only D items", and "Only E items". When
+  // any of these functions were called, the corresponding value of the system variable gUseItemSubset
+  // was set, and the menu choices were adjusted (displayed) accordingly. The fact that these were
+  // six different functions was due to the fact that separate menu commands were issued by menu choices,
+  // so each needed its own script to capture the menu event.
+  // calcAll // "All"
+  // calcA // "A"
+  // calcB // "B"
+  // calcC // "C"
+  // calcD // "D"
+  // calcE // "E"
+  //
+  // toggleCalcAE // not to be confused with the functions above! This function checked if the data was
+  // valid for displaying separate results for areas A, B, C, D, and E, respectively, and manipulated
+  // the corresponding menu items in the output display menu. If an area was available, the respective
+  // menu item was enabled (displayed in black, and clickable/selectable), but if the area was not
+  // available, the menu item was disabled (displayed in gray, not clickable/selectable). This was
+  // determined by means of the system variable gIsValidAE[5], that had five boolean values corresponding
+  // to the five areas. (This system variable was defined elsewhere in preparing the output.) (This function could be
+  // called by the program to adjust the menu choices, without user input.)
+  //
 
   // HARALD: FOR THE "redrawAll" SCRIPT TO WORK, THE FOLLOWING FUNCTIONS NEED TO BE DEFINED. I AM GIVING
   // DEFINITIONS AND THE OPENSCRIPT CONTENTS - MUST WRITE TYPESCRIPT FUNCTIONS THAT MANIPULATE OUTPUT
