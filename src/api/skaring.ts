@@ -1,17 +1,38 @@
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
 
+  // Global variables that represent dynamic data / user-inputted and user-manipulated
+  // variables. These are implemented as global variables in the current transition/
+  // intermediate version, but must be changed to represent actual dynamic data
+  // in a working version.
+  gRawItemScoreString: string; // 50 test items
+  navn_value: string; // note text string
+  alder_value: string; // age text string
+  gutt_value: boolean; // 1 if boy is checked and 0 otherwise
+  jente_value: boolean; // 1 if girl is checked and 0 otherwise (both can be 0)
+
   // System configurations
   sysDateFormat: string;
   sysDecimal: string;
   sysList: string;
 
-  // Global variables
+  // Global variables for file handling
   currentFile: string | null;
   currentFileIsSaved: boolean;
-  svShowRasch: boolean;
+  versionString: string;
 
-  // Other global variables
+  // Global variables for results display parameters
+  // Includes age groups labels and thresholds & percentiles
+  // that are not manipulated before results display is created
+  svShowRasch: boolean;
+  gUseItemSubset: string;
+  gIsValidAE: boolean[];
+  gModelPercentiles: number[][];
+  gAgeGroupLabels: string[];
+  gItemLabels: string[];
+  gAgeGroupThresholds: number[][];
+
+  // Global variables and constants for Rasch-measure calculations and error handling
   gResult: number;
   gCalculateDebugOutput: string;
   gCalculateDebugCurrentState: string;
@@ -24,57 +45,75 @@ export class Skaring {
   gConvertParameter2: number;
   gMinEstAge: number;
   gMaxEstAge: number;
-  gRawItemScoreString: string;
-  gUseItemSubset: string;
-  gIsValidAE: boolean[];
   gAlder: number;
-  gModelPercentiles: number[][];
-  gAgeGroupLabels: string[];
-  gAgeGroupThresholds: number[][];
-  gItemLabels: string[];
-  versionString: string;
   aItemDifficulties: number[];
+  // Note: The following global variable is listed under the section that represents
+  // dynamic data. But see how it is used - it may perhaps be efficient to have it as
+  // a calculation variable that is filled from dynamic data.
+  //   gRawItemScoreString: string;
 
   constructor() {
+    // Global variables that represent dynamic data / user-inputted and user-manipulated
+    // variables. These are implemented as global variables in the current transition/
+    // intermediate version, but must be changed to represent actual dynamic data
+    // in a working version.
+    this.gRawItemScoreString =
+      "99999999999999999999999999999999999999999999999999";
+    this.navn_value = "Ola Normann"; // note text string
+    this.alder_value = "8:0"; // age text string
+    this.gutt_value = true; // true if boy is checked and 0 otherwise (both can be false)
+    this.jente_value = false; // true if girl is checked and 0 otherwise (both can be false)
     // System configurations
     this.sysDateFormat = "dd.mm.yyyy";
     this.sysDecimal = ".";
     this.sysList = ",";
 
-    // Global variables
+    // Global variables for file handling
     this.currentFile = null;
     this.currentFileIsSaved = true;
-    this.svShowRasch = false;
-
-    // Other global variables
-    this.gResult = 0;
-    this.gCalculateDebugOutput = "";
-    this.gCalculateDebugCurrentState = "Initialized.";
-    this.gMeasure = -9999;
-    this.gSE = -9999;
-    this.gNValid = 0;
-    this.gIsMinEstimated = true;
-    this.gIsMaxEstimated = true;
-    this.gConvertParameter1 = 1.968;
-    this.gConvertParameter2 = 0.254;
-    this.gMinEstAge = 3.5;
-    this.gMaxEstAge = 18;
-    this.gRawItemScoreString =
-      "99999999999999999999999999999999999999999999999999";
-    this.gUseItemSubset = "All";
-    this.gIsValidAE = [false, false, false, false, false];
-    this.gAlder = -9999;
     this.versionString = "NUBUMotor_101";
 
-    this.aItemDifficulties = [
-      -1.94, -1.38, -1.22, -0.68, -0.15, -0.36, 0.43, 1.27, 2.24, 2.06, -2.76,
-      -1.7, -1.02, -0.8, -0.29, 0.37, 1.05, 1.33, 1.61, 2.23, -2.54, -2.33,
-      -1.72, -1.59, -1.35, -0.08, -0.37, 1.6, 1.49, 1.49, -2.82, -1.89, -0.83,
-      -0.22, -0.26, -0.12, 1.31, 1.62, 1.93, 2.4, -1.54, -1.43, -1.04, 0.21,
-      0.89, 1.19, 1.25, 1.34, 1.19, 1.94,
+    // Global variables for results display parameters
+    // Includes age groups labels and thresholds & percentiles
+    // that are not manipulated before results display is created
+    this.svShowRasch = false;
+    this.gUseItemSubset = "All";
+    this.gIsValidAE = [false, false, false, false, false];
+    this.gAgeGroupLabels = [
+      "4-åringer",
+      "5-åringer",
+      "6-åringer",
+      "7-åringer",
+      "8-åringer",
+      "9-åringer",
+      "10-åringer",
+      "11- og 12-åringer",
+      "13- og 14-åringer",
+      "15- og 16-åringer",
     ];
-
-    // Model Percentiles
+    this.gAgeGroupThresholds = [
+      [-2.78, -1.85, -0.89],
+      [-1.81, -0.92, -0.45],
+      [-0.92, -0.46, 0.4],
+      [-0.76, 0.04, 0.6],
+      [-0.16, 0.57, 1.19],
+      [0.18, 1.23, 1.93],
+      [0.97, 1.88, 3.13],
+      [1.36, 2.17, 3.0],
+      [1.99, 2.64, 3.05],
+      [2.24, 2.92, 3.77],
+    ];
+    this.gItemLabels = Array("ABCDE".length).reduce(
+      (accumulator, currLetter) => {
+        accumulator = [
+          ...accumulator,
+          ...Array(10)
+            .fill(0)
+            .map((_, numberIndex) => currLetter + (numberIndex + 1).toString()),
+        ];
+      },
+      []
+    );
     this.gModelPercentiles = [
       [-4.2, 0],
       [-2.5, 1],
@@ -143,46 +182,27 @@ export class Skaring {
       [3, 100],
     ];
 
-    // Age Group Labels
-    this.gAgeGroupLabels = [
-      "4-åringer",
-      "5-åringer",
-      "6-åringer",
-      "7-åringer",
-      "8-åringer",
-      "9-åringer",
-      "10-åringer",
-      "11- og 12-åringer",
-      "13- og 14-åringer",
-      "15- og 16-åringer",
+    // Global variables and constants for Rasch-measure calculations and error handling
+    this.gResult = 0;
+    this.gMeasure = -9999;
+    this.gCalculateDebugOutput = "";
+    this.gCalculateDebugCurrentState = "Initialized.";
+    this.gSE = -9999;
+    this.gNValid = 0;
+    this.gIsMinEstimated = true;
+    this.gIsMaxEstimated = true;
+    this.gConvertParameter1 = 1.968;
+    this.gConvertParameter2 = 0.254;
+    this.gMinEstAge = 3.5;
+    this.gMaxEstAge = 18;
+    this.gAlder = -9999;
+    this.aItemDifficulties = [
+      -1.94, -1.38, -1.22, -0.68, -0.15, -0.36, 0.43, 1.27, 2.24, 2.06, -2.76,
+      -1.7, -1.02, -0.8, -0.29, 0.37, 1.05, 1.33, 1.61, 2.23, -2.54, -2.33,
+      -1.72, -1.59, -1.35, -0.08, -0.37, 1.6, 1.49, 1.49, -2.82, -1.89, -0.83,
+      -0.22, -0.26, -0.12, 1.31, 1.62, 1.93, 2.4, -1.54, -1.43, -1.04, 0.21,
+      0.89, 1.19, 1.25, 1.34, 1.19, 1.94,
     ];
-
-    // Age Group Thresholds
-    this.gAgeGroupThresholds = [
-      [-2.78, -1.85, -0.89],
-      [-1.81, -0.92, -0.45],
-      [-0.92, -0.46, 0.4],
-      [-0.76, 0.04, 0.6],
-      [-0.16, 0.57, 1.19],
-      [0.18, 1.23, 1.93],
-      [0.97, 1.88, 3.13],
-      [1.36, 2.17, 3.0],
-      [1.99, 2.64, 3.05],
-      [2.24, 2.92, 3.77],
-    ];
-
-    // Item Labels
-    this.gItemLabels = Array("ABCDE".length).reduce(
-      (accumulator, currLetter) => {
-        accumulator = [
-          ...accumulator,
-          ...Array(10)
-            .fill(0)
-            .map((_, numberIndex) => currLetter + (numberIndex + 1).toString()),
-        ];
-      },
-      []
-    );
 
     // HARALD: MISSING USER-INTERFACE MAMIPULATION: THE INTERFACE SHOULD START DISPLAYING THE INPUT PAGE, AND THE STATE OF THE PAGE SHOULD BE LIKE
     // AFTER HAVING STARTED A NEW FILE (A NEW CASE), THUS THE INPUT FIELDS/DATA SHOULD BE BLANK. IN OPENSCRIPT THIS WAS ACHIEVED BY THE FOLLOWING CODE
@@ -535,15 +555,15 @@ export class Skaring {
       "18:0",
     ];
 
-    if (redrawAll !== 0) {
-      // Note: The case "redrawAll" !== 0" does not happen triggered by code. It can be called by the
-      // developer to adjust all the positions and other properties that are called. Among other things,
-      // this should align the positions and sizes of fields, lines and rectangles to fit with the
-      // bounds of the rectangles defined above. It might be handy. Note that after running this,
-      // some item information fields will be on top of each other or too close to each other. Those
-      // must be adjusted manually.
-      // Depending on how we build the graphic output elements, we may not want to
-      // use this part at all!.
+    // Note: The case "redrawAll" !== 0" does not happen triggered by code. It can be called by the
+    // developer to adjust all the positions and other properties that are called. Among other things,
+    // this should align the positions and sizes of fields, lines and rectangles to fit with the
+    // bounds of the rectangles defined above. It might be handy. Note that after running this,
+    // some item information fields will be on top of each other or too close to each other. Those
+    // must be adjusted manually.
+    // Depending on how we build the graphic output elements, we may not want to
+    // use the following part at all!.
+    /*     if (redrawAll !== 0) {
 
       // Sets prompts texts
       // HARALD: In the following, we really need to know the height of each field item_1 to item_50 to preserve
@@ -675,6 +695,7 @@ export class Skaring {
       }
       // End of "redrawAll" clause.
     }
+ */
 
     // Here begins the normal redraw of elements, which occurs every time the output display is
     // readjusted. The following code manipulates the visibility of the Rasch
@@ -700,31 +721,32 @@ export class Skaring {
     }
 
     // information fields
-    // HARALD: Here, we need to get the data for the fields "navn" and "alder". I am
-    // putting text constants into local variables for now; this should be changed to actual data.
-    let navn_value = "Ola Normann";
-    let alder_value = "5:1";
-    this.setFieldText("navn", navn_value);
-    this.setFieldText("alder", alder_value);
-    // HARALD: Likewise, we need to get the data for the "gutt" and "jente" choices.
-    // (They are two boolean values. Both can be false, but only one or the other can be true.)
-    // I am setting the value into local variables for now. Need to fill with actual data.
-    let gutt_value: boolean;
-    gutt_value = true;
-    let jente_value: boolean;
-    jente_value = false;
+    // HARALD: Below, we need to get the text data for the fields "navn" and "alder",
+    // and the boolean values for the data choices "gutt" and "jente".
+    // In the current intermediate/transition version, these are set as the global variables
+    // navn_value, alder_value, gutt_value, and jente_value, which have been initialized
+    // to some values above in declaration/initialization.
+    // This should be changed to actual (user-inputted) data.
+    // Likewise, we are using the 50 user-inputted item values in gRawItemScoreString, which
+    // is initialized to some value. We must make sure that this reflects the current state
+    // of the data in the 50 data fields/variables.
 
-    if (gutt_value === true) {
+    // Fills information fields with contents from data
+    this.setFieldText("navn", this.navn_value);
+    this.setFieldText("alder", this.alder_value);
+    if (this.gutt_value === true) {
+      // Note: A tab character is inserted in the field, which must have a tab stop, or modify.
       this.setFieldText("led_kjonn", "Kjønn:\tGutt");
     } else {
-      if (jente_value === false) {
+      if (this.jente_value === false) {
         this.setFieldText("led_kjonn", "");
       } else {
+        // Note: A tab character is inserted in the field, which must have a tab stop, or modify.
         this.setFieldText("led_kjonn", "Kjønn:\tJente");
       }
     }
 
-    // estimate line
+    // Places estimate line
     if (this.gMeasure !== -9999) {
       const estimateLineVertices = {
         x1: leftPU,
@@ -750,7 +772,7 @@ export class Skaring {
       this.setLineVisibility("estimateline", false);
     }
 
-    // confidence interval rectangle
+    // Places confidence interval rectangle
     if (this.gSE !== -9999 && !this.gIsMinEstimated && !this.gIsMaxEstimated) {
       const ciRectangleVertices = {
         x1: leftPU,
@@ -776,7 +798,7 @@ export class Skaring {
       this.setRectangleVisibility("CI", false);
     }
 
-    // item information fields
+    // Sets text color of item information fields, and fills with item labels and data as applicable
     for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
       if ("012".indexOf(this.gRawItemScoreString[ctrJ]) === -1) {
         this.setFieldText("item_" + (ctrJ + 1), this.gItemLabels[ctrJ]);
@@ -791,8 +813,7 @@ export class Skaring {
       }
     }
 
-    // text field with numeric results
-    // ... [Additional code that builds a text output and manipulates graphical elements.]
+    // Text field with numeric results
 
     let vOutput: string = "";
 
@@ -849,9 +870,9 @@ export class Skaring {
     }
 
     if (this.gAlder !== -9999) {
-      // HARALD: Note. The constant "alder_value" below, which contains the display value of the
-      // input data field "alder", should be changed to display dynamically the data of the
-      // data field "alder".
+      // HARALD: Note. The global variable "alder_value" must be adjusted to
+      // represent actual data. (alder_value is the user-inputted text value;
+      // gAlder is a numeric value for calculation, they are not the same)
       vOutput +=
         "Skåren tilsvarer " +
         this.modellpersentilFraEstimat(
@@ -863,7 +884,7 @@ export class Skaring {
             )
         ) +
         ". persentilen av barn på alderen " +
-        alder_value +
+        this.alder_value +
         " basert på\n" +
         "den statistiske modellen.\n\n";
     } else {
@@ -898,6 +919,8 @@ export class Skaring {
   }
 
   // SECTION "-- ***************** FILE READING AND WRITING ************************"
+
+  // HARALD: ##Here.
 
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
 
