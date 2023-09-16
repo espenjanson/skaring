@@ -1,3 +1,6 @@
+// fs is needed for file reading/writing.
+import * as fs from "fs";
+
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
 
@@ -920,7 +923,99 @@ export class Skaring {
 
   // SECTION "-- ***************** FILE READING AND WRITING ************************"
 
-  // HARALD: ##Here.
+  writeNUBUFile(inFileName: string): number {
+    // --File format: A Windows/ANSI plain text file with 9 CRLF-separated text lines. The contents of the lines are:
+    // --1. Navn (string)
+    // --2. A string with two boolean values in text separated by a single space i.e. "true false" corresponding to values of "Gutt" and "Jente"
+    // --3. blank in this version (used for birthdate in a previous version)
+    // --4. blank in this version (used for test date in a previous version)
+    // --5. Alder (string)
+    // --6. blank in this version (used for optional note 1 in a previous version)
+    // --7. blank in this version (used for optional note 2 in a previous version)
+    // --8. Values of 50 items (string with length 50 where possible character values are '0', '1', '2', '9', and '*')
+    // --9. Version string: Must be "NUBUMotor_101" for files created with this version, may be "NUBUMotor_100" in files written by a previous version
+
+    try {
+      let dataString: string = "";
+      for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
+        const charValue = this.gRawItemScoreString[ctrJ - 1] || "9";
+        dataString += charValue === "NULL" ? "*" : charValue.charAt(0);
+      }
+      // Harald: To be tested if gutt_value and jente_value appear as e.g. "true false" i.e., lowercase text separated by " " in the result.
+      const content: string =
+        `${this.navn_value}\n` +
+        `${this.gutt_value} ${this.jente_value}\n\n\n` +
+        `${this.alder_value}\n\n\n` +
+        `${dataString}\n` +
+        "NUBUMotor_101\n";
+      // HARALD: I think I would like to code the text file as Windows (ANSI), but I see below that the coding is set to "utf8". Will this create problems
+      // with compatability with previous Windows-created files, and/or if users move files across operating systems?
+      //
+      // HARALD: In the translation, it was noted: "We're using the synchronous versions of the file reading/writing functions (readFileSync and writeFileSync)
+      // for simplicity. However, in real-world scenarios, especially with large files or frequent IO operations, you might consider using the asynchronous
+      // versions to avoid blocking the main thread." -- I don't anticipate large files or frequent IO operations, so is this an issue?
+      fs.writeFileSync(inFileName, content, "utf8");
+      return 1; // success
+    } catch (error) {
+      // HARALD: The functionality in case of an error occurring (like: the file could not be created, or not written to) should be to return 0 without
+      // handling the error or alerting the user here. Is this what happens? (In the translation, it was noted: "Error handling is done using try-catch blocks.
+      // If an error occurs, we simply return 0 to indicate failure, as per your requirements.")
+      console.error(error);
+      return 0; // failure
+    }
+  }
+
+  readNUBUFile(inFileName: string): number {
+    // Writes to a file. See the previous function for file format definition.
+    try {
+      const content: string = fs.readFileSync(inFileName, "utf8");
+      const lines = content.split("\n");
+      // HARALD: See previous function for a note re. text encoding (UTF-8 vs. Windows/ANSI), As above, I see below that the expected coding of the file to read
+      // is set to "utf8". Will this create problems with compatability with previous Windows-created files (encoded Windows/ANSI), and/or if users move files
+      // across operating systems?
+      if (lines[8] !== "NUBUMotor_100" && lines[8] !== "NUBUMotor_101") {
+        // HARALD: The translator noted: "For the user prompt, we're using the browser's built-in prompt function. This might not be ideal for all situations,
+        // especially if you're building a Node.js application without a frontend. In such cases, other methods for user input might be more appropriate."
+        const userResponse = prompt(
+          "Ukjent filformat. Vil du fortsette?",
+          "Fortsett"
+        );
+        if (userResponse !== "Fortsett") {
+          // HARALD: Improvement is needed here. A return value of 0 will cause the calling function to alert the user to an error. That is not
+          // the wanted behavior. Instead, the calling function should just stop with no further action. This could be amended by returning
+          // a return value of e.g., 2, but this has not been implemented yet.
+          return 0; // failure
+        }
+      }
+      this.navn_value = lines[0];
+      this.gutt_value = lines[1].split(" ")[0] === "true";
+      this.jente_value = lines[1].split(" ")[1] === "true";
+      this.alder_value = lines[4];
+      // HARALD: The translator wrote the following code which fails because gRawItemScoreString is a string and cannot be changed character by character.
+      // I have replaced that by untried code I wrote just below. Also, the suggested translation does not seem to check if data is a valid character.
+      // for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
+      //   this.gRawItemScoreString[ctrJ - 1] = lines[7].charAt(ctrJ - 1);
+      // }
+      let dataString: string = "";
+      for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
+        const charValue = lines[7].charAt(ctrJ);
+        // HARALD: To be tested/verified: If the encountered character is "0", "1", or "2", append that character to dataString. If not, append "9".
+        if ("012".indexOf(charValue[0]) === -1) {
+          dataString += "9";
+        } else {
+          dataString += charValue.charAt(0);
+        }
+      }
+      this.gRawItemScoreString = dataString;
+      return 1; // success
+    } catch (error) {
+      // HARALD: The functionality in case of an error occurring (like: the file could not be created, or not written to) should be to return 0 without
+      // handling the error or alerting the user here. Is this what happens? (In the translation, it was noted: "Error handling is done using try-catch blocks.
+      // If an error occurs, we simply return 0 to indicate failure, as per your requirements.")
+      console.error(error);
+      return 0; // failure
+    }
+  }
 
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
 
