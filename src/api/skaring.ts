@@ -34,6 +34,8 @@ export class Skaring {
   gAgeGroupLabels: string[];
   gItemLabels: string[];
   gAgeGroupThresholds: number[][];
+  graphicBounds: { x1: number; y1: number; x2: number; y2: number };
+  rectangleGraph: { x1: number; y1: number; x2: number; y2: number };
 
   // Global variables and constants for Rasch-measure calculations and error handling
   gResult: number;
@@ -184,6 +186,12 @@ export class Skaring {
       [2.1, 100],
       [3, 100],
     ];
+    // graphicBounds is the metric of the actual (dynamic) output canvas excluding margins.
+    // It will be redefined later, but is set to some arbitrary values here.
+    this.graphicBounds = { x1: 100, y1: 100, x2: 14900, y2: 22900 };
+    // rectangleGraph is the metric of the legacy ToolBook graphic display (graph). It is used
+    // for conversion:
+    this.rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
 
     // Global variables and constants for Rasch-measure calculations and error handling
     this.gResult = 0;
@@ -427,27 +435,172 @@ export class Skaring {
   // called by the program to adjust the menu choices, without user input.)
   //
 
-  // HARALD: FOR THE "redrawAll" SCRIPT TO WORK, THE FOLLOWING FUNCTIONS NEED TO BE DEFINED. I AM GIVING
+  // HARALD: THE FOLLOWING FUNCTIONS, WHICH CREATE OR MANIPULATE OBJECTS ON THE OUTPUT PICTURE/CANVAS,
+  // NEED TO BE DEFINED. I AM GIVING
   // DEFINITIONS AND THE OPENSCRIPT CONTENTS - MUST WRITE TYPESCRIPT FUNCTIONS THAT MANIPULATE OUTPUT
   // GRAPHIC ELEMENTS IN THE SAME WAY.
+
+  // HARALD: I wrote this function in TypeScript without testing it.
+  // It should convert vertices in original ToolBook output page metric
+  // (relative to the rectangle this.rectangleGrahp) to current output canvas
+  // metric (relative to the rectangle this.graphicBounds)
+  convertVertices(vertices: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }): any {
+    const outx1 =
+      this.graphicBounds.x1 +
+      ((vertices.x1 - this.rectangleGraph.x1) /
+        (this.rectangleGraph.x2 - this.rectangleGraph.x1)) *
+        (this.graphicBounds.x2 - this.graphicBounds.x1);
+    const outy1 =
+      this.graphicBounds.y1 +
+      ((vertices.y1 - this.rectangleGraph.y1) /
+        (this.rectangleGraph.y2 - this.rectangleGraph.y1)) *
+        (this.graphicBounds.y2 - this.graphicBounds.y1);
+    const outx2 =
+      this.graphicBounds.x1 +
+      ((vertices.x2 - this.rectangleGraph.x1) /
+        (this.rectangleGraph.x2 - this.rectangleGraph.x1)) *
+        (this.graphicBounds.x2 - this.graphicBounds.x1);
+    const outy2 =
+      this.graphicBounds.y1 +
+      ((vertices.y2 - this.rectangleGraph.y1) /
+        (this.rectangleGraph.y2 - this.rectangleGraph.y1)) *
+        (this.graphicBounds.y2 - this.graphicBounds.y1);
+    // HARALD: Note: Depending on what format TypeScript accepts for coordinates, it may
+    // be necessary to round/adjust the four output numbers to integers. They are typically
+    // decimal numbers after all the division above (while the four input numbers were integers).
+    const myOutput = { x1: outx1, y1: outy1, x2: outx2, y2: outy2 };
+    return myOutput;
+  }
+
+  createField(
+    fieldName: string,
+    vertices: { x1: number; y1: number; x2: number; y2: number },
+    text: string,
+    visible: boolean,
+    fontFace: string,
+    fontSize: string,
+    fontStyle: string,
+    fontColor: string,
+    align: string
+  ): void {
+    // Should create a text field on the white drawing canvas. All fields are non-clickable (non-user-inputtable),
+    // borderless (i.e., no frame), fill color white (or no fill), transparent (it may not matter much but
+    // better transparent than opaque white if something should make them overlap), don't have baselines,
+    // vertical alignment of text is "top" (i.e., the text fits in the top of the field, and if there
+    // are several textlines they expand toward the bottom), all fields may have several textlines and
+    // text should wrap to several lines if it does not fit on one line (and should of course also start
+    // a new line on the '\n' character). Field text may contain a '\t' character, the text should then
+    // tabulate to the next tab stop (this only happens in the field "led_kjonn" and the tab stop should
+    // be selected so that the text "Kjønn:" fits before the first tab with some distance to it. Or reprogram
+    // that detail.)
+    //
+    // Parameters:
+    // fieldName: A unique string, which identifies the field (and by which the field may be called in
+    //   following code, i.e., to change its text, or hide or show it)
+    // text: The text that the field should display (text may contain \n and \t, see above)
+    // vertices: the x1, y1, x2, and y2 coordinates (x and y of upper-left corner and lower-right corner,
+    //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
+    // visible: If True, the field should be visible on the canvas. If False, it should be hidden (not displayed).
+    // fontFace: May be "Sans" (use a generic sans-serif font) or "Courier" (use a Courier-type fixed-width font)
+    // fontSize: May be "small" (small normal text, i.e., 8 pt) or "heading" (the page heading, i.e., 18 pt).
+    // fontStyle: May be "regular", "underline" or "bold"
+    // fontColor: May be "black" or "lightGray" (text should appear dimmed/light)
+    // align: Indicates the horizontal alignment of text in the field. May be "center", "left", or "right".
+    //
+    // Converts input vertices to vertices in actual metric
+    // HARALD: To be checked. Does this syntax create a const with the new vertices?.
+    // Note: This syntax appears in several places. Adjust in all places where applicable.
+    const actualVertices = this.convertVertices(vertices);
+  }
+
+  createLine(
+    objectName: string,
+    vertices: { x1: number; y1: number; x2: number; y2: number },
+    visible: boolean,
+    objectColor: string,
+    transparent: boolean,
+    lineStyle: string
+  ): void {
+    // Should create a line (as a graphic object) on the drawing canvas.
+    //
+    // Parameters:
+    // objectName: A unique string, which identifies the line (and by which the object may be called in
+    //   following code, i.e., to show/hide it or to move it on the canvas)
+    // vertices: the x1, y1, x2, and y2 coordinates (x and y of upper-left corner and lower-right corner,
+    //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
+    //   NOTE: The line is only 2-dimensionally defined (i.e., a horizontal line has y1 = y2 and a vertical
+    //   line has x1 = x2). The thickness of the line is not given by the vertices parameter, but by the
+    //   lineStyle parameter below.
+    // visible: If True, the object should be visible on the canvas. If False, it should be hidden (not displayed).
+    // objectColor: May be "black", "lightGray" (line should appear dimmed/light), or "darkGray" (line should
+    // appear as dark, but visibly lighter than black)
+    // transparent: Whether the object should be drawn transparent.
+    // lineStyle: Indicates the type of line. May be "thin" (a thin line, readily visible, i.e., 1 pt.),
+    //   "dotted" (a thin line which is dotted i.e., dots separated with white space), or
+    //   "thick" (a thick/marked line that attracts attention, i.e, 4 pt.)
+    //
+    // Converts input vertices to vertices in actual metric
+    // HARALD: To be checked. Does this syntax create a const with the new vertices?.
+    // Note: This syntax appears in several places. Adjust in all places where applicable.
+    const actualVertices = this.convertVertices(vertices);
+  }
+
+  createRectangle(
+    objectName: string,
+    vertices: { x1: number; y1: number; x2: number; y2: number },
+    visible: boolean,
+    objectColor: string,
+    transparent: boolean,
+    lineStyle: string
+  ): void {
+    // Should create a rectangle (as a graphic object) on the drawing canvas.
+    //
+    // Parameters:
+    // objectName: A unique string, which identifies the line (and by which the object may be called in
+    //   following code, i.e., to show/hide it or to move it on the canvas)
+    // vertices: the x1, y1, x2, and y2 coordinates. (x and y of upper-left corner and lower-right corner,
+    //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
+    //   Rectangles are 2d-objects (x1 != x2 and y1 != y2).
+    // visible: If True, the object should be visible on the canvas. If False, it should be hidden (not displayed).
+    // objectColor: May be "grayPattern" (a medium gray [i.e., 25% black] or a patterned fill so that objects
+    //   under it are visible and readable through the transparency)
+    // transparent: Whether the object should be drawn transparent.
+    // lineStyle: Indicates the type of outline of the rectangle. May be "none" (no outline) or "thin" (a thin line,
+    //   readily visible, i.e., 1 pt.).
+    //
+    // Converts input vertices to vertices in actual metric
+    // HARALD: To be checked. Does this syntax create a const with the new vertices?.
+    // Note: This syntax appears in several places. Adjust in all places where applicable.
+    const actualVertices = this.convertVertices(vertices);
+  }
+
   setFieldText(fieldName: string, newText: string): void {
     //text of field (fieldName) of page "PrintPage1"  = newText
   }
-  setFieldPosition(
-    fieldName: string,
-    newPosition: { x: number; y: number }
-  ): void {
-    // position of field (fieldName) of page "PrintPage1"  = newPosition;
-  }
+
+  // HARALD: Not used in current implementation - may be deleted if works without.
+  // setFieldPosition(
+  //   fieldName: string,
+  //   newPosition: { x: number; y: number }
+  // ): void {
+  //   // position of field (fieldName) of page "PrintPage1"  = newPosition;
+  // }
+
   setFieldVisibility(fieldName: string, isVisible: boolean): void {
     // visible of field (fieldName) of page "PrintPage1"  = isVisible
   }
-  setFieldVertices(
-    fieldName: string,
-    newVertices: { x1: number; y1: number; x2: number; y2: number }
-  ): void {
-    //vertices of field (fieldName) of page "PrintPage1"  = newVertices
-  }
+  // HARALD: Not used in current implementation - may be deleted if works without.
+  // setFieldVertices(
+  //   fieldName: string,
+  //   newVertices: { x1: number; y1: number; x2: number; y2: number }
+  // ): void {
+  //   //vertices of field (fieldName) of page "PrintPage1"  = newVertices
+  // }
   setFieldStrokeColor(fieldName: string, newColor: string): void {
     // HARALD: NOTE: PARAMETER "NEWCOLOR" TAKES A COLOR CONSTANT LIKE "black" OR "lightGray" IN OPENSCRIPT
     // strokeColor of field (fieldName) of page "PrintPage1"  = newColor
@@ -459,17 +612,23 @@ export class Skaring {
       //fontStyle of last word of text of field (fieldName) of page "PrintPage1" = regular
     }
   }
-  setLinePosition(
-    lineName: string,
-    newPosition: { x: number; y: number }
-  ): void {
-    // position of line (lineName) of page "PrintPage1"  = newPosition
-  }
+  // HARALD: Not used in current implementation - may be deleted if works without.
+  // setLinePosition(
+  //   lineName: string,
+  //   newPosition: { x: number; y: number }
+  // ): void {
+  //   // position of line (lineName) of page "PrintPage1"  = newPosition
+  // }
   setLineVertices(
     lineName: string,
     newVertices: { x1: number; y1: number; x2: number; y2: number }
   ): void {
     // vertices of line (lineName) of page "PrintPage1"  = newVertices
+    //
+    // Converts input vertices to vertices in actual metric
+    // HARALD: To be checked. Does this syntax create a const with the new vertices?.
+    // Note: This syntax appears in several places. Adjust in all places where applicable.
+    const actualVertices = this.convertVertices(newVertices);
   }
   setLineVisibility(lineName: string, isVisible: boolean): void {
     // visible of line (lineName) of page "PrintPage1"  = isVisible; return 1
@@ -480,6 +639,11 @@ export class Skaring {
     newVertices: { x1: number; y1: number; x2: number; y2: number }
   ): void {
     // vertices of rectangle (rectangleName) of page "PrintPage1"  = newVertices; return 1
+    //
+    // Converts input vertices to vertices in actual metric
+    // HARALD: To be checked. Does this syntax create a const with the new vertices?.
+    // Note: This syntax appears in several places. Adjust in all places where applicable.
+    const actualVertices = this.convertVertices(newVertices);
   }
   setRectangleVisibility(rectangleName: string, isVisible: boolean): void {
     // visible of rectangle (rectangleName) of page "PrintPage1"  = isVisible; return 1
@@ -489,8 +653,12 @@ export class Skaring {
     // This is the script that manipulates the objects on the output page
     let minage: number, maxage: number, minMeasure: number, maxMeasure: number;
     let maxPU: number, minPU: number, leftPU: number, rightPU: number;
-    let maxPT: number, minPT: number, leftPT: number, rightPT: number;
+    // the ***PT constants should not be in use. Delete if this works without them.
+    //    let maxPT: number, minPT: number, leftPT: number, rightPT: number;
     const promptoffset: number = 100;
+
+    // HARALD: The "redrawAll" parameter is not used any longer; remove it from this function and
+    // calls to it.
 
     let showRaschMeasure: boolean;
     // HARALD: This has been simplified. In OpenScript, I checked if "sysLevel" was "reader", i.e.
@@ -498,30 +666,28 @@ export class Skaring {
     // I am assuming that the program is running.
     showRaschMeasure = this.svShowRasch;
 
-    // These next lines were static assignments in the original script.
-    // I'm interpreting them as fixed assignments here.
-    // The first assignment should be to the coordinates of the object "rectangleGraph" in the
-    // output display. The point is that by getting the coordinates, all other elements can be
-    // properly adjusted.
-    // In OpenScript, the dynamic assignment was:
-    // get vertices of rectangle "Graph1" of page "PrintPage1"
-    let rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
+    // rectangleGraph and its components maxPU, minPU, leftPU, rightPU gives the coordinates in
+    // ToolBook metric of the output elements in the visual graph. rectangleGraph is assigned in
+    // the constructor.
+    //    let rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
+    maxPU = this.rectangleGraph.y1;
+    minPU = this.rectangleGraph.y2;
+    leftPU = this.rectangleGraph.x1;
+    rightPU = this.rectangleGraph.x2;
 
-    // HARALD: Similarly, the point of the next assignment is to get the rectangle coordinates
+    /*  // HARALD: This is not used (we don't readjust text fields relative to rectangleTextAlign),
+    // this code can be deleted if the program runs without it.
+   // HARALD: Similarly, the point of the next assignment is to get the rectangle coordinates
     // for proper adjustment of text fields. In OpenScript, the corresponding dynamic statement
     // was:
-    // get vertices of rectangle "TextAlignField" of page "PrintPage1"
+    // get vertices of rectangle "TextAlignField" of page "PrintPage1" (we don't use a
+    // corresponding rectangle in TypeScript)
     let rectangleTextAlign = { x1: 3108, y1: 8262, x2: 8460, y2: 13977 };
-
-    maxPU = rectangleGraph.y1;
-    minPU = rectangleGraph.y2;
-    leftPU = rectangleGraph.x1;
-    rightPU = rectangleGraph.x2;
-
     maxPT = rectangleTextAlign.y1;
     minPT = rectangleTextAlign.y2;
     leftPT = rectangleTextAlign.x1;
     rightPT = rectangleTextAlign.x2;
+ */
 
     minage = this.gMinEstAge;
     maxage = this.gMaxEstAge;
@@ -558,169 +724,1355 @@ export class Skaring {
       "18:0",
     ];
 
-    // Note: The case "redrawAll" !== 0" does not happen triggered by code. It can be called by the
-    // developer to adjust all the positions and other properties that are called. Among other things,
-    // this should align the positions and sizes of fields, lines and rectangles to fit with the
-    // bounds of the rectangles defined above. It might be handy. Note that after running this,
-    // some item information fields will be on top of each other or too close to each other. Those
-    // must be adjusted manually.
-    // Depending on how we build the graphic output elements, we may not want to
-    // use the following part at all!.
-    /*     if (redrawAll !== 0) {
+    // HARALD: The following code creates the graphic objects for the output drawing canvas.
+    // The objects are created in the intended layer order, i.e., the first created object
+    // should appear "in back" and the last created object "in front" (this matters for
+    // transparencies, in particular the "CI" rectangle is placed "on top" of other graphics
+    // which should be visible through it). In this order, also, static elements (which may
+    // be hidden or shown but don't change position or size and don't change their content/text)
+    // are created first (i.e., in the background), and objects that change dynamically
+    // (i.e., change position or size, or their text/content/fontstyle) are created later.
 
-      // Sets prompts texts
-      // HARALD: In the following, we really need to know the height of each field item_1 to item_50 to preserve
-      // field height. For now, I am just setting the field height to the constant of 192 which was the
-      // OpenScript/ToolBook height of field item_1 as well as of field item_50.
-      const localFieldHeight = 192;
-      for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
-        this.setFieldText("item_" + (ctrJ + 1), this.gItemLabels[ctrJ]);
-        const fieldPos = {
-          x: Math.trunc((ctrJ - 0.5) / 10) * 0.2 * (rightPT - leftPT) + leftPT,
-          y:
-            this.YPUFromMeasure(
-              this.aItemDifficulties[ctrJ],
-              minMeasure,
-              maxMeasure,
-              maxPT,
-              minPT
-            ) -
-            localFieldHeight / 2,
-        };
-        this.setFieldPosition("item_" + (ctrJ + 1), fieldPos);
-      }
+    // HARALD: Note that the creation of the output canvas has two steps. First, all
+    // elements are created with default properties. Then, properties (i.e., position,
+    // size, text/contents, bold style of last word of text) is manipulated according
+    // to data and output options. This is effective if it is meaningful to create the
+    // drawing canvas and readjust it for changed/new output. What needs to be added if
+    // that is to be used, is code to make the "create" part run only once, and the
+    // part that changes objects' appearance may be run each time the output display
+    // is regenerated. - - -
+    // However, if all objects must be created anew each time the output display should
+    // change, the below code is unefficient and the part that creates objects should be
+    // combined with the part that changes objects below it.
+    //
 
-      for (let ctrJ = 0; ctrJ < ageLines.length; ctrJ++) {
-        if (ageLines[ctrJ] >= minage && ageLines[ctrJ] <= maxage) {
-          this.setLineVisibility("ageline" + (ctrJ + 1), true);
-          this.setFieldVisibility("ageprompt" + (ctrJ + 1), true);
+    // HARALD: At this point, Espen should start to create/define a white drawing canvas
+    // with the desired size for the output. The ToolBook graphic output page happened to have the
+    // proportions (horizontal:vertical) of about 1:1.53 (= about 15:23). The creation
+    // and manipulation of graphic output elements below should take place all on the
+    // drawing canvas. After the size of the drawing canvas has been defined, the outer
+    // bounds for any graphic elements must be given here in graphicBounds. The graphicBounds
+    // should be the proportions of the drawing canvas, minus any margins we want, i.e.,
+    // white space we want outside of drawing objects on the canvas. For example, if
+    // the drawing canvas is defined (x1, x2, y1, y2 for upper-left xy and lower-right xy)
+    // to be of shape (0, 0, 15000, 23000) and one should want margins/white space of 100
+    // on all four sides, the graphicBounds should be set to (100, 100, 14900, 22900). This
+    // will make the conversion of x and y coordinates from original ToolBook metric
+    // to the actual, dynamic metric work. NEEDS TO BE DONE DYNAMICALLY:
+    this.graphicBounds = { x1: 100, y1: 100, x2: 14900, y2: 22900 };
 
-          const lineVertices = {
-            x1: leftPU,
-            y1: this.YPUFromMeasure(
-              this.ageToMeasure(
-                ageLines[ctrJ],
-                this.gConvertParameter1,
-                this.gConvertParameter2
-              ),
-              minMeasure,
-              maxMeasure,
-              maxPU,
-              minPU
-            ),
-            x2: rightPU,
-            y2: this.YPUFromMeasure(
-              this.ageToMeasure(
-                ageLines[ctrJ],
-                this.gConvertParameter1,
-                this.gConvertParameter2
-              ),
-              minMeasure,
-              maxMeasure,
-              maxPU,
-              minPU
-            ),
-          };
-          this.setLineVertices("ageline" + (ctrJ + 1), lineVertices);
-          // HARALD: In the next lines, I really wanted to dynamically get the width of the
-          // ageprompt fields (there are 13 or so of them). For now, I am just setting the
-          // width to 708, which was the OpenScript/ToolBook width.
-          const localFieldwidth = 708;
-          const fieldPos = {
-            x: leftPU - localFieldwidth - promptoffset,
-            y: this.YPUFromMeasure(
-              this.ageToMeasure(
-                ageLines[ctrJ],
-                this.gConvertParameter1,
-                this.gConvertParameter2
-              ),
-              minMeasure,
-              maxMeasure,
-              maxPU,
-              minPU
-            ),
-          };
-          this.setFieldPosition("ageprompt" + (ctrJ + 1), fieldPos);
+    // The following code creates all output objects with default properties/contents:
+    // HARALD: Commented-out create... calls are for objects that are legacy from ToolBook
+    // but which I think are not used and not needed. They are kept until we have tested
+    // the code but should be deleted if it proves to be the case that we don't need them.
 
-          this.setFieldText("ageprompt" + (ctrJ + 1), agePrompts[ctrJ]);
-        } else {
-          this.setLineVisibility("ageline" + (ctrJ + 1), false);
-          this.setFieldVisibility("ageprompt" + (ctrJ + 1), false);
-        }
-      }
+    this.createField(
+      "headingfield",
+      { x1: 516, y1: 132, x2: 9411, y2: 687 },
+      "NUBU 4-16 Samleskår for motoriske oppgaver",
+      true,
+      "Sans",
+      "heading",
+      "bold",
+      "black",
+      "center"
+    );
+    this.createField(
+      "led_navn",
+      { x1: 906, y1: 741, x2: 1761, y2: 1056 },
+      "Notat:",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "led_merknad_NOT_USED",
+      { x1: 918, y1: 1449, x2: 1875, y2: 1764 },
+      "Merknad:_NOT_USED",
+      false,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "led_merknad2_NOT_USED",
+      { x1: 918, y1: 1809, x2: 1899, y2: 2124 },
+      "Merknad 2:_NOT_USED",
+      false,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "led_alder",
+      { x1: 2715, y1: 1446, x2: 3240, y2: 1761 },
+      "Alder:",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createLine(
+      "ageline1",
+      { x1: 1692, y1: 13977, x2: 2400, y2: 13977 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline2",
+      { x1: 1692, y1: 13511, x2: 2400, y2: 13511 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline3",
+      { x1: 1692, y1: 13100, x2: 2400, y2: 13100 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline4",
+      { x1: 1692, y1: 12732, x2: 2400, y2: 12732 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline5",
+      { x1: 1692, y1: 12400, x2: 2400, y2: 12400 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline6",
+      { x1: 1692, y1: 12096, x2: 2400, y2: 12096 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline7",
+      { x1: 1692, y1: 11558, x2: 2400, y2: 11558 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline8",
+      { x1: 1692, y1: 11092, x2: 2400, y2: 11092 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline9",
+      { x1: 1692, y1: 10681, x2: 2400, y2: 10681 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline10",
+      { x1: 1692, y1: 10313, x2: 2400, y2: 10313 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline11",
+      { x1: 1692, y1: 9677, x2: 2400, y2: 9677 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline12",
+      { x1: 1692, y1: 9139, x2: 2400, y2: 9139 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline13",
+      { x1: 1692, y1: 8673, x2: 2400, y2: 8673 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    this.createLine(
+      "ageline14",
+      { x1: 1692, y1: 8262, x2: 2400, y2: 8262 },
+      true,
+      "black",
+      false,
+      "dotted"
+    );
+    // this.createLine("measureTick1_NOT_USED",{x1: 2580, y1: 348, x2: 2808, y2: 348},false,"black",false,"thin")
+    // this.createLine("measureTick2_NOT_USED",{x1: 2610, y1: 378, x2: 2838, y2: 378},false,"black",false,"thin")
+    // this.createLine("measureTick3_NOT_USED",{x1: 2640, y1: 408, x2: 2868, y2: 408},false,"black",false,"thin")
+    this.createLine(
+      "measureTick4",
+      { x1: 2400, y1: 13697, x2: 2550, y2: 13697 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick5",
+      { x1: 2400, y1: 13254, x2: 2550, y2: 13254 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick6",
+      { x1: 2400, y1: 12811, x2: 2550, y2: 12811 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick7",
+      { x1: 2400, y1: 12367, x2: 2550, y2: 12367 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick8",
+      { x1: 2400, y1: 11924, x2: 2550, y2: 11924 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick9",
+      { x1: 2400, y1: 11481, x2: 2550, y2: 11481 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick10",
+      { x1: 2400, y1: 11038, x2: 2550, y2: 11038 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick11",
+      { x1: 2400, y1: 10595, x2: 2550, y2: 10595 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick12",
+      { x1: 2400, y1: 10151, x2: 2550, y2: 10151 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick13",
+      { x1: 2400, y1: 9708, x2: 2550, y2: 9708 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick14",
+      { x1: 2400, y1: 9265, x2: 2550, y2: 9265 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick15",
+      { x1: 2400, y1: 8822, x2: 2550, y2: 8822 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    this.createLine(
+      "measureTick16",
+      { x1: 2400, y1: 8378, x2: 2550, y2: 8378 },
+      true,
+      "black",
+      false,
+      "thin"
+    );
+    // this.createLine("measureTick17_NOT_USED",{x1: 3060, y1: 828, x2: 3288, y2: 828},false,"black",false,"thin")
+    // this.createLine("measureTick18_NOT_USED",{x1: 3090, y1: 858, x2: 3318, y2: 858},false,"black",false,"thin")
+    this.createField(
+      "AgeEquivPrompt",
+      { x1: 845, y1: 7704, x2: 2240, y2: 7932 },
+      "Aldersekvivalent",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "ageprompt1",
+      { x1: 1097, y1: 13863, x2: 1592, y2: 14091 },
+      "3:6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt2",
+      { x1: 1097, y1: 13397, x2: 1592, y2: 13625 },
+      "4:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt3",
+      { x1: 1097, y1: 12986, x2: 1592, y2: 13214 },
+      "4:6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt4",
+      { x1: 1097, y1: 12618, x2: 1592, y2: 12846 },
+      "5:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt5",
+      { x1: 1097, y1: 12286, x2: 1592, y2: 12514 },
+      "5:6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt6",
+      { x1: 1097, y1: 11982, x2: 1592, y2: 12210 },
+      "6:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt7",
+      { x1: 1097, y1: 11444, x2: 1592, y2: 11672 },
+      "7:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt8",
+      { x1: 1097, y1: 10978, x2: 1592, y2: 11206 },
+      "8:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt9",
+      { x1: 1097, y1: 10567, x2: 1592, y2: 10795 },
+      "9:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt10",
+      { x1: 1097, y1: 10199, x2: 1592, y2: 10427 },
+      "10:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt11",
+      { x1: 1097, y1: 9563, x2: 1592, y2: 9791 },
+      "12:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt12",
+      { x1: 1097, y1: 9025, x2: 1592, y2: 9253 },
+      "14:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt13",
+      { x1: 1097, y1: 8559, x2: 1592, y2: 8787 },
+      "16:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "ageprompt14",
+      { x1: 1097, y1: 8148, x2: 1592, y2: 8376 },
+      "18:0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "MeasurePromptR",
+      { x1: 2333, y1: 7692, x2: 3176, y2: 8064 },
+      "Rasch-\nskår",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    // this.createField("measureprompt0",{x1: 8475, y1: 2595, x2: 8970, y2: 2955},"NOT_USED",false,"Sans","small","regular","black","right")
+    // this.createField("measureprompt1",{x1: 8805, y1: 2040, x2: 9570, y2: 2595},"NOT_USED",false,"Sans","small","regular","black","right")
+    // this.createField("measureprompt2",{x1: 8535, y1: 2655, x2: 9030, y2: 3015},"NOT_USED",false,"Sans","small","regular","black","right")
+    // this.createField("measureprompt3",{x1: 8565, y1: 2685, x2: 9060, y2: 3045},"NOT_USED",false,"Sans","small","regular","black","right")
+    this.createField(
+      "measureprompt4",
+      { x1: 2550, y1: 13583, x2: 2900, y2: 13811 },
+      "-2.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt5",
+      { x1: 2550, y1: 13140, x2: 2900, y2: 13368 },
+      "-2.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt6",
+      { x1: 2550, y1: 12697, x2: 2900, y2: 12925 },
+      "-1.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt7",
+      { x1: 2550, y1: 12253, x2: 2900, y2: 12481 },
+      "-1.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt8",
+      { x1: 2550, y1: 11810, x2: 2900, y2: 12038 },
+      "-0.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt9",
+      { x1: 2550, y1: 11367, x2: 2900, y2: 11595 },
+      "0.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt10",
+      { x1: 2550, y1: 10924, x2: 2900, y2: 11152 },
+      "0.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt11",
+      { x1: 2550, y1: 10481, x2: 2900, y2: 10709 },
+      "1.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt12",
+      { x1: 2550, y1: 10037, x2: 2900, y2: 10265 },
+      "1.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt13",
+      { x1: 2550, y1: 9594, x2: 2900, y2: 9822 },
+      "2.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt14",
+      { x1: 2550, y1: 9151, x2: 2900, y2: 9379 },
+      "2.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt15",
+      { x1: 2550, y1: 8708, x2: 2900, y2: 8936 },
+      "3.0",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    this.createField(
+      "measureprompt16",
+      { x1: 2550, y1: 8264, x2: 2900, y2: 8492 },
+      "3.5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "right"
+    );
+    // this.createField("measureprompt17",{x1: 8376, y1: 4062, x2: 8871, y2: 4422},"NOT_USED",false,"Sans","small","regular","black","right")
+    // this.createField("measureprompt18",{x1: 8358, y1: 4944, x2: 8853, y2: 5304},"NOT_USED",false,"Sans","small","regular","black","right")
+    this.createField(
+      "AreaPrompt_A",
+      { x1: 3005, y1: 7692, x2: 4005, y2: 8342 },
+      "A: Statisk\nkoordinasjon",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "AreaPrompt_B",
+      { x1: 4064, y1: 7686, x2: 5064, y2: 8336 },
+      "B: Hendenes\ndynamiske\nkoordinasjon",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "AreaPrompt_C",
+      { x1: 5123, y1: 7692, x2: 6123, y2: 8342 },
+      "C: Generell dynamisk\nkoordinasjon",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "AreaPrompt_D",
+      { x1: 6182, y1: 7686, x2: 7182, y2: 8336 },
+      "D: Hurtighet",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "AreaPrompt_E",
+      { x1: 7253, y1: 7692, x2: 8253, y2: 8342 },
+      "E: Simultane\nbevegelser",
+      true,
+      "Sans",
+      "small",
+      "underline",
+      "black",
+      "center"
+    );
+    this.createField(
+      "item_1",
+      { x1: 3108, y1: 13105, x2: 3771, y2: 13297 },
+      "A1",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_2",
+      { x1: 3108, y1: 12620, x2: 3771, y2: 12812 },
+      "A2",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_3",
+      { x1: 3108, y1: 12454, x2: 3771, y2: 12646 },
+      "A3",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_4",
+      { x1: 3108, y1: 11988, x2: 3771, y2: 12180 },
+      "A4",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_5",
+      { x1: 3480, y1: 11602, x2: 4143, y2: 11794 },
+      "A5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_6",
+      { x1: 2880, y1: 11608, x2: 3543, y2: 11800 },
+      "A6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_7",
+      { x1: 3108, y1: 11004, x2: 3771, y2: 11196 },
+      "A7",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_8",
+      { x1: 3108, y1: 10259, x2: 3771, y2: 10451 },
+      "A8",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_9",
+      { x1: 3480, y1: 9483, x2: 4143, y2: 9675 },
+      "A9",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_10",
+      { x1: 2880, y1: 9475, x2: 3543, y2: 9667 },
+      "A10",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_11",
+      { x1: 4178, y1: 13831, x2: 4841, y2: 14023 },
+      "B1",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_12",
+      { x1: 4178, y1: 12892, x2: 4841, y2: 13084 },
+      "B2",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_13",
+      { x1: 4178, y1: 12289, x2: 4841, y2: 12481 },
+      "B3",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_14",
+      { x1: 4178, y1: 12094, x2: 4841, y2: 12286 },
+      "B4",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_15",
+      { x1: 4178, y1: 11642, x2: 4841, y2: 11834 },
+      "B5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_16",
+      { x1: 4178, y1: 11057, x2: 4841, y2: 11249 },
+      "B6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_17",
+      { x1: 4178, y1: 10454, x2: 4841, y2: 10646 },
+      "B7",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_18",
+      { x1: 4178, y1: 10206, x2: 4841, y2: 10398 },
+      "B8",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_19",
+      { x1: 4178, y1: 9958, x2: 4841, y2: 10150 },
+      "B9",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_20",
+      { x1: 4178, y1: 9408, x2: 4841, y2: 9600 },
+      "B10",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_21",
+      { x1: 5249, y1: 13636, x2: 5912, y2: 13828 },
+      "C1",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_22",
+      { x1: 5249, y1: 13450, x2: 5912, y2: 13642 },
+      "C2",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_23",
+      { x1: 5249, y1: 12934, x2: 5912, y2: 13126 },
+      "C3",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_24",
+      { x1: 5249, y1: 12758, x2: 5912, y2: 12950 },
+      "C4",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_25",
+      { x1: 5249, y1: 12570, x2: 5912, y2: 12762 },
+      "C5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_26",
+      { x1: 5585, y1: 11612, x2: 6248, y2: 11804 },
+      "C6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_27",
+      { x1: 4985, y1: 11617, x2: 5648, y2: 11809 },
+      "C7",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_28",
+      { x1: 5249, y1: 10123, x2: 5912, y2: 10315 },
+      "C8",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_29",
+      { x1: 5561, y1: 9956, x2: 6224, y2: 10148 },
+      "C9",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_30",
+      { x1: 4937, y1: 9956, x2: 5600, y2: 10148 },
+      "C10",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_31",
+      { x1: 6319, y1: 13881, x2: 6982, y2: 14073 },
+      "D1",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_32",
+      { x1: 6319, y1: 13060, x2: 6982, y2: 13252 },
+      "D2",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_33",
+      { x1: 6319, y1: 12121, x2: 6982, y2: 12313 },
+      "D3",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_34",
+      { x1: 6307, y1: 11640, x2: 6970, y2: 11832 },
+      "D4",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_35",
+      { x1: 5995, y1: 11459, x2: 6658, y2: 11651 },
+      "D5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_36",
+      { x1: 6643, y1: 11455, x2: 7306, y2: 11647 },
+      "D6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_37",
+      { x1: 6319, y1: 10224, x2: 6982, y2: 10416 },
+      "D7",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_38",
+      { x1: 6319, y1: 9949, x2: 6982, y2: 10141 },
+      "D8",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_39",
+      { x1: 6319, y1: 9674, x2: 6982, y2: 9866 },
+      "D9",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_40",
+      { x1: 6319, y1: 9258, x2: 6982, y2: 9450 },
+      "D10",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_41",
+      { x1: 7390, y1: 12774, x2: 8053, y2: 12966 },
+      "E1",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_42",
+      { x1: 7390, y1: 12629, x2: 8053, y2: 12821 },
+      "E2",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_43",
+      { x1: 7390, y1: 12307, x2: 8053, y2: 12499 },
+      "E3",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_44",
+      { x1: 7390, y1: 11199, x2: 8053, y2: 11391 },
+      "E4",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_45",
+      { x1: 7390, y1: 10596, x2: 8053, y2: 10788 },
+      "E5",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_46",
+      { x1: 7738, y1: 10342, x2: 8401, y2: 10534 },
+      "E6",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_47",
+      { x1: 7054, y1: 10349, x2: 7717, y2: 10541 },
+      "E7",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_48",
+      { x1: 7054, y1: 10173, x2: 7717, y2: 10365 },
+      "E8",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_49",
+      { x1: 7738, y1: 10174, x2: 8401, y2: 10366 },
+      "E9",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "item_50",
+      { x1: 7390, y1: 9665, x2: 8053, y2: 9857 },
+      "E10",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "lightGray",
+      "center"
+    );
+    this.createField(
+      "copyright",
+      { x1: 15, y1: 14535, x2: 9570, y2: 14790 },
+      "Grete Andrup, Harald Janson og Bente Gjærum: NUBU 4-16 Motorisk test. © 2006-2023 Universitetsforlaget og Harald Janson. Alle rettigheter reservert.",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "center"
+    );
+    this.createField(
+      "navn",
+      { x1: 1920, y1: 744, x2: 9027, y2: 1419 },
+      "_TO_BE_FILLED_WITH_DATA_",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "alder",
+      { x1: 3261, y1: 1437, x2: 3810, y2: 1707 },
+      "_TO_BE_FILLED_WITH_DATA_",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "led_kjonn",
+      { x1: 912, y1: 1440, x2: 3273, y2: 1755 },
+      "_TO_BE_FILLED_WITH_DATA_",
+      true,
+      "Sans",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    this.createField(
+      "output",
+      { x1: 924, y1: 1773, x2: 9180, y2: 8424 },
+      "_TO_BE_FILLED_WITH_DATA_",
+      true,
+      "Courier",
+      "small",
+      "regular",
+      "black",
+      "left"
+    );
+    // this.createRectangle("TextAlignField_PROBABLY_NOT_USED",{x1: 3108, y1: 8262, x2: 8460, y2: 13977},true,"black",false,"none")
+    // this.createRectangle("Graph1_PROBABLY_NOT_USED",{x1: 1692, y1: 8262, x2: 2400, y2: 13977},true,"black",false,"thin")
+    this.createRectangle(
+      "CI",
+      { x1: 1692, y1: 9233, x2: 2400, y2: 11526 },
+      true,
+      "grayPattern",
+      true,
+      "thin"
+    );
+    this.createLine(
+      "EstimateLine",
+      { x1: 1692, y1: 10380, x2: 8460, y2: 10380 },
+      true,
+      "darkGray",
+      true,
+      "thick"
+    );
 
-      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
-        if (
-          ageLinesMeasure[ctrJ] >= minMeasure &&
-          ageLinesMeasure[ctrJ] <= maxMeasure
-        ) {
-          // repositions and shows tick lines and measure prompts if measure is within min and max measure range.
-          let fieldPos = {
-            x: rightPU,
-            y: this.YPUFromMeasure(
-              ageLinesMeasure[ctrJ],
-              minMeasure,
-              maxMeasure,
-              maxPU,
-              minPU
-            ),
-          };
-          this.setLinePosition("measureTick" + (ctrJ + 1), fieldPos);
-          this.setLineVisibility("measureTick" + (ctrJ + 1), true);
-          // HARALD: In the next lines, I really wanted to dynamically get the width of the
-          // measureprompt fields (there are 17 or so of them). For now, I am just setting the
-          // width to 350, which was the OpenScript/ToolBook width.
-          // Similarly, setting the height to 228.
-          const localFieldwidth = 350;
-          const localFieldHeight = 228;
-          fieldPos = {
-            x: rightPU + localFieldwidth,
-            y:
-              this.YPUFromMeasure(
-                ageLinesMeasure[ctrJ],
-                minMeasure,
-                maxMeasure,
-                maxPU,
-                minPU
-              ) - localFieldHeight,
-          };
-          this.setFieldPosition("measureprompt" + (ctrJ + 1), fieldPos);
-          this.setFieldVisibility("measureprompt" + (ctrJ + 1), true);
-          this.setFieldText(
-            "measureprompt" + (ctrJ + 1),
-            "" + ageLinesMeasure[ctrJ]
-          );
-        } else {
-          // hides tick lines and measure prompts if out of min and max measure range.
-          this.setLineVisibility("measureTick" + (ctrJ + 1), false);
-          this.setFieldVisibility("measureprompt" + (ctrJ + 1), false);
-        }
-      }
-      // End of "redrawAll" clause.
-    }
- */
-
-    // Here begins the normal redraw of elements, which occurs every time the output display is
-    // readjusted. The following code manipulates the visibility of the Rasch
+    // The following code manipulates the visibility of the Rasch
     // scale ticks and prompts, the item information fields, the estimate line, and the
     // confidence interval rectangle.
+
+    // If Rasch measure scale is to be displayed, shows tick marks, tick mark labels, and the underlined heading.
     if (showRaschMeasure) {
-      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
-        if (
-          ageLinesMeasure[ctrJ] >= minMeasure &&
-          ageLinesMeasure[ctrJ] <= maxMeasure
-        ) {
-          this.setFieldVisibility("measureprompt" + (ctrJ + 1), true);
-          this.setLineVisibility("measureTick" + (ctrJ + 1), true);
-        }
+      // Actually, only lines named 4 through 16, i.e., ctrJ from 3 to 15, are used.
+      // Need not check the condition for manipulating lines.
+      // Old code was:
+      //      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+      // if (
+      //   ageLinesMeasure[ctrJ] >= minMeasure &&
+      //   ageLinesMeasure[ctrJ] <= maxMeasure
+      // ) {
+      for (let ctrJ = 3; ctrJ < 16; ctrJ++) {
+        this.setFieldVisibility("measureprompt" + (ctrJ + 1), true);
+        this.setLineVisibility("measureTick" + (ctrJ + 1), true);
       }
-      this.setFieldVisibility("measureprompt_", true);
+      this.setFieldVisibility("measurepromptR", true);
     } else {
-      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+      // Similarly, need not cycle through all elements, just those that are used.
+      //      for (let ctrJ = 0; ctrJ < ageLinesMeasure.length; ctrJ++) {
+      for (let ctrJ = 3; ctrJ < 16; ctrJ++) {
         this.setFieldVisibility("measureprompt" + (ctrJ + 1), false);
         this.setLineVisibility("measureTick" + (ctrJ + 1), false);
       }
-      this.setFieldVisibility("measureprompt_", false);
+      this.setFieldVisibility("measurepromptR", false);
     }
 
     // information fields
@@ -760,7 +2112,7 @@ export class Skaring {
           maxPU,
           minPU
         ),
-        x2: rightPT,
+        x2: rightPU,
         y2: this.YPUFromMeasure(
           this.gMeasure,
           minMeasure,
