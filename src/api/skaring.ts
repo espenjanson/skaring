@@ -1,5 +1,14 @@
+// The translator suggest to use FileSaver.js to ease file writing.
+// See note at function lagreSomFil
+// In such case, needs to first install FileSaver.js
+// (In shell, run the following to install:)
+// npm install file-saver
+// and then, import and use in TypeScript code: [It is commented out because it creates an error.]
+// import { saveAs } from 'file-saver';
+
 // fs is needed for file reading/writing.
 import * as fs from "fs";
+//
 
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
@@ -442,7 +451,7 @@ export class Skaring {
 
   // HARALD: I wrote this function in TypeScript without testing it.
   // It should convert vertices in original ToolBook output page metric
-  // (relative to the rectangle this.rectangleGrahp) to current output canvas
+  // (relative to the rectangle this.rectangleGraph) to current output canvas
   // metric (relative to the rectangle this.graphicBounds)
   convertVertices(vertices: {
     x1: number;
@@ -505,7 +514,7 @@ export class Skaring {
     // text: The text that the field should display (text may contain \n and \t, see above)
     // vertices: the x1, y1, x2, and y2 coordinates (x and y of upper-left corner and lower-right corner,
     //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
-    // visible: If True, the field should be visible on the canvas. If False, it should be hidden (not displayed).
+    // visible: If true, the field should be visible on the canvas. If false, it should be hidden (not displayed).
     // fontFace: May be "Sans" (use a generic sans-serif font) or "Courier" (use a Courier-type fixed-width font)
     // fontSize: May be "small" (small normal text, i.e., 8 pt) or "heading" (the page heading, i.e., 18 pt).
     // fontStyle: May be "regular", "underline" or "bold"
@@ -533,15 +542,15 @@ export class Skaring {
     //   following code, i.e., to show/hide it or to move it on the canvas)
     // vertices: the x1, y1, x2, and y2 coordinates (x and y of upper-left corner and lower-right corner,
     //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
-    //   NOTE: The line is only 2-dimensionally defined (i.e., a horizontal line has y1 = y2 and a vertical
-    //   line has x1 = x2). The thickness of the line is not given by the vertices parameter, but by the
-    //   lineStyle parameter below.
-    // visible: If True, the object should be visible on the canvas. If False, it should be hidden (not displayed).
+    //   NOTE: All lines are either horizontal or vertical. Lines are thus 1-dimensional objects in 2-dimensional
+    //   space (i.e., a horizontal line has y1 = y2 and a vertical line has x1 = x2). The thickness of the
+    //   line is not given by the vertices parameter, but by the lineStyle parameter below.
+    // visible: If true, the object should be visible on the canvas. If false, it should be hidden (not displayed).
     // objectColor: May be "black", "lightGray" (line should appear dimmed/light), or "darkGray" (line should
-    // appear as dark, but visibly lighter than black)
+    //   appear as dark, but visibly lighter than black)
     // transparent: Whether the object should be drawn transparent.
     // lineStyle: Indicates the type of line. May be "thin" (a thin line, readily visible, i.e., 1 pt.),
-    //   "dotted" (a thin line which is dotted i.e., dots separated with white space), or
+    //   "dotted" (a thin line which is dotted i.e., dots separated by white space), or
     //   "thick" (a thick/marked line that attracts attention, i.e, 4 pt.)
     //
     // Converts input vertices to vertices in actual metric
@@ -550,28 +559,29 @@ export class Skaring {
     const actualVertices = this.convertVertices(vertices);
   }
 
-  createRectangle(
-    objectName: string,
+  createCIRectangle(
     vertices: { x1: number; y1: number; x2: number; y2: number },
-    visible: boolean,
-    objectColor: string,
-    transparent: boolean,
-    lineStyle: string
+    visible: boolean
   ): void {
-    // Should create a rectangle (as a graphic object) on the drawing canvas.
-    //
-    // Parameters:
-    // objectName: A unique string, which identifies the line (and by which the object may be called in
-    //   following code, i.e., to show/hide it or to move it on the canvas)
+    // This function will only be called once; there is only one rectangle to create.
+    // It is the CI (confidence interval) rectangle which is to be created. The only
+    // properties that we want to be variable at the time of creation is its vertices
+    // and its visibility. These may also be manipulated later by calling
+    // setRectangleVisibility and setRectangleVertices:
     // vertices: the x1, y1, x2, and y2 coordinates. (x and y of upper-left corner and lower-right corner,
+    // visible: If true, the object should be visible on the canvas. If false, it should be hidden (not displayed).
     //   respectively, in original ToolBook page units. Must be converted to the metric of the current canvas.)
     //   Rectangles are 2d-objects (x1 != x2 and y1 != y2).
-    // visible: If True, the object should be visible on the canvas. If False, it should be hidden (not displayed).
-    // objectColor: May be "grayPattern" (a medium gray [i.e., 25% black] or a patterned fill so that objects
-    //   under it are visible and readable through the transparency)
-    // transparent: Whether the object should be drawn transparent.
-    // lineStyle: Indicates the type of outline of the rectangle. May be "none" (no outline) or "thin" (a thin line,
-    //   readily visible, i.e., 1 pt.).
+    // The rest of the properties of the rectangle will remain constant:
+    // The objectName, unique string, which identifies the line (and by which the object may be called in
+    //   following code to show/hide it or to move it on the canvas), must be "CI"
+    // The color/pattern of the rectanble should be a medium gray [i.e., 25% black] or a patterned fill
+    //   so that objects under it are visible and readable through the transparency, cf. old ToolBook
+    //   implementation of the CI rectangle.)
+    // transparent: This rectangle must be transparent, i.e., objects in underlying layers should be
+    //   visible through it.
+    // lineStyle: The outer contours of the rectangle should be marked by a "thin" (a thin line,
+    //   readily visible, i.e., 1 pt.), black, outline.
     //
     // Converts input vertices to vertices in actual metric
     // HARALD: To be checked. Does this syntax create a const with the new vertices?.
@@ -2027,16 +2037,9 @@ export class Skaring {
       "black",
       "left"
     );
+    // The following 2 commented-out code lines should be deleted if not re-used (and calls a function, createRectangle, which is not defined).
     // this.createRectangle("TextAlignField_PROBABLY_NOT_USED",{x1: 3108, y1: 8262, x2: 8460, y2: 13977},true,"black",false,"none")
     // this.createRectangle("Graph1_PROBABLY_NOT_USED",{x1: 1692, y1: 8262, x2: 2400, y2: 13977},true,"black",false,"thin")
-    this.createRectangle(
-      "CI",
-      { x1: 1692, y1: 9233, x2: 2400, y2: 11526 },
-      true,
-      "grayPattern",
-      true,
-      "thin"
-    );
     this.createLine(
       "EstimateLine",
       { x1: 1692, y1: 10380, x2: 8460, y2: 10380 },
@@ -2045,6 +2048,7 @@ export class Skaring {
       true,
       "thick"
     );
+    this.createCIRectangle({ x1: 1692, y1: 9233, x2: 2400, y2: 11526 }, true);
 
     // The following code manipulates the visibility of the Rasch
     // scale ticks and prompts, the item information fields, the estimate line, and the
@@ -2275,6 +2279,9 @@ export class Skaring {
 
   // SECTION "-- ***************** FILE READING AND WRITING ************************"
 
+  // The two following functions, writeNUBUFile and readNUBUFile, do the actual reading and writing of files.
+  // The user interaction is handled further below in functions lagreFil, lagreSomFil, aapneFil, and nyFil.
+
   writeNUBUFile(inFileName: string): number {
     // --File format: A Windows/ANSI plain text file with 9 CRLF-separated text lines. The contents of the lines are:
     // --1. Navn (string)
@@ -2367,6 +2374,133 @@ export class Skaring {
       console.error(error);
       return 0; // failure
     }
+  }
+
+  // User interaction functions. In translation from OpenScript, the translator noted the following:
+  /*   "You can achieve file reading and writing functionalities in TypeScript by using the Web APIs available
+        in modern browsers. However, there are some limitations:
+  1.	File Writing: Browsers do not have the capability to write files directly to the user’s filesystem 
+        due to security restrictions. However, you can create Blob objects and create download links to allow
+        the user to download and save them manually. You can use FileSaver.js to simplify this process.
+  2.	File Reading: You can use the File API to read files selected by the user via an input element of 
+        type file.
+  3.	Directory Access: Modern browsers do not have the capability to set or get the current directory 
+        due to security restrictions.
+  4.	Showing Dialogs: For “Open” and “Save As” functionalities, you can use the <input type="file"> 
+        element, and for showing alerts and confirm dialogs, you can use window.alert() and window.confirm().
+  (Note.) As mentioned, the direct writing of files and getting/setting the current directory are restricted 
+        in browsers due to security concerns, so some functionalities are achieved differently or omitted."
+ */
+  async lagreFil() {
+    // If the currentFile is null or the versionString is not "NUBUMotor_101", it calls lagreSomFil. If the
+    // file is written successfully, it updates the UI (to be implemented later).
+    if (this.currentFile === null || this.versionString !== "NUBUMotor_101") {
+      await this.lagreSomFil();
+      return;
+    }
+    if (this.writeNUBUFile(this.currentFile) === 1) {
+      // Update display needs to be implemented. (In ToolBook, the caption of the main window that
+      // was displaying the application included the name of the open file, i.e., the name
+      // of the file that was saved, cf. ToolBook UI implementation.)
+      this.currentFileIsSaved = true;
+    } else {
+      window.alert(`Kunne ikke lagre filen ${this.currentFile}.`);
+      // The translator changed the above to English:      window.alert(`Could not save the file ${this.currentFile}.`);
+    }
+  }
+
+  lagreSomFil() {
+    // The translator noted: "•	lagreSomFil: It tries to save the file with a default name and
+    // updates the UI if successful."
+    // The translator noted: "Here we use FileSaver.js to simplify the file saving process."
+    // HARALD: In the following line: Replace defaultFilename with the default file name we want.
+    // We would really like the user to be able to choose the location and name of file-to-be-saved,
+    // in a standard operating-system dialog box. Is this what happens?
+    let fileName = "defaultFilename.~Z4";
+    if (this.writeNUBUFile(fileName) === 1) {
+      this.versionString = "NUBUMotor_101";
+      this.currentFile = fileName;
+      this.currentFileIsSaved = true;
+      // Update display needs to be implemented. (In ToolBook, the caption of the main window that
+      // was displaying the application changed to include the name of the open file, i.e., the name
+      // of the file that was just successfully saved, cf. ToolBook UI implementation.)
+    } else {
+      window.alert(`Kunne ikke lagre data i filen ${fileName}.`);
+      // The translator changed the above to English: window.alert(`Could not save data in the file ${fileName}.`);
+      // HARALD: We want no further action (program execution) to take place here, given that the
+      // attempt to save-as has failed. Is that what happens?
+    }
+  }
+
+  dummy1() {}
+
+  aapneFil(argA?: string, argB?: string) {
+    // •	aapneFil: It reads a file selected by the user. If the user cancels the file selection, it does nothing.
+    //  If the file is read successfully, it updates the UI.
+    this.gUseItemSubset = "All";
+    if (!this.currentFileIsSaved) {
+      if (window.confirm("Vil du lagre endringene?")) {
+        // We want the Norwegian "Ja" or "Nei" to appear as response alternatives here, is that what happens?
+        //          The translator changed the above to English: (window.confirm("Do you want to save the changes?")) {            this.lagreFil();
+      }
+    }
+    let input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".txt, .~Z4";
+    /* 
+    // HARALD: I HAVE COMMENTED OUT PARTS OF THE FUNCTION BECAUSE IT CREATED AN ERROR AT "event.target as ...".
+    // IT MUST BE RE-UNCOMMENTED
+    // **** FROM HERE ****
+    input.onchange = (event) => {
+      let file = (event.target as HTMLInputElement).files[0];
+      if (file) {
+        if (this.readNUBUFile(file) === 1) {
+          this.currentFile = file.name;
+          this.currentFileIsSaved = true;
+          // Update display needs to be implemented. (In ToolBook, the caption of the main window that
+          // was displaying the application changed to include the name of the open file, i.e., the name
+          // of the file that was just successfully opened, cf. ToolBook UI implementation.)
+        } else {
+          window.alert(
+            `Filen ${file.name} kunne ikke leses av programmet.`
+            // The translator changed the above to English: `The file ${file.name} could not be read by the program.`
+            // In this case, the global variables that govern file status and name, and the UI interface/
+            // display, are unchanged.
+          );
+        }
+      }
+    };
+    // **** TO HERE ****
+     */
+    input.click();
+  }
+
+  nyFil() {
+    // If the data is not saved, the user is asked to confirm whether the user
+    // wants to save the changes (and in such case, saves the data by calling
+    // lagreFil()).
+    this.versionString = "NUBUMotor_101";
+    if (!this.currentFileIsSaved) {
+      if (window.confirm("Vil du lagre endringene?")) {
+        // The translator changed the above to English: if (window.confirm("Do you want to save the changes?")) {
+        // The action we want is the following: The user is asked whether changes should be saved.
+        // The response categories should be in Norwegian "Ja" or "Nei". Unless the user specifically
+        // responds "No", changes should be saved by calling this.lagreFil(). Regardless of whether
+        // this happens, program execution continues below, i.e., there is no "Cancel" option, the "New file"
+        // action always happens regardless of user input to the prompt.
+        this.lagreFil();
+      }
+    }
+    // HARALD: We will need to implement a reset function to clear the form/UI.
+    // I wrote a stub for the this.resetForm() function above to avoid an error here.
+    this.resetForm(); // Calls the function that resets the UI and the data to default (blank).
+    this.gUseItemSubset = "All";
+    this.currentFile = null;
+    // Update display needs to be implemented. (In ToolBook, the caption of the main window that
+    // was displaying the application changed to signal that a new child had been
+    // opened, and not saved to file, cf. ToolBook UI implementation.)
+    this.currentFileIsSaved = true; // this variable should change to false whenever any data
+    // is later inputted by user.
   }
 
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
@@ -2793,39 +2927,48 @@ export class Skaring {
     //  in a try-catch block. If you don't want to halt execution, you can simply remove the throw statement.
     throw new Error(theIn); // Throw an error to halt execution
   }
-}
 
-// SCRIPTS OF SEPARATE OBJECTS IN OPENSCRIPT -- THESE CAME AFTER THE "SECTIONED" PART IN THE DOCUMENT
-//
-// HARALD: The functionality of the scripts "to handle enterfield" and "to handle leavefield" of page "Start" (the input page)
-// was to keep track of whether data had changed by user input. If any of the inputtable data had changed since last saved,
-// the global variable currentFileIsSaved changed from TRUE to FALSE. This mattered for file saving - if the user wanted
-// to close the program, or open another file, or start a new file, the user would be prompted for saving the data before proceeding if
-// the data had changed.
-//
-// The "to handle buttonClick" handle of the button with name "Beregn" on page id 1 (page "Start") had the functionality to
-// make the program prepare data for output, perform all calculations, and display output. This was achieved by:
-// 1. Setting the global variable gUseItemSubset to "All" so results should be calculated based on all items;
-// 2. sending the command (i.e., calling the function) "prepareInputForOutput" which in turn would trigger all the actions needed.
-//
-// The "to handle buttonClick" handle of the button with name "Toem" on page id 1 (page "Start") had the functionality to
-// empty all data and set the global variable "gAlder" which represents the age of the child to the missing value -9999
-//
-// HARALD: The field "alder" of the page "Start" had two handlers: "on enterField" and "on leaveField". This is important
-// functionality for the program results - this is the functionality that converts the age from the input and display format
-// in years:months (e.g., like "6:1") to a number. The functionality of the scripts did the following:
-// When a user entered the field, i.e., started editing it (by tabbing to it or clicking on it), the global variable
-// that represents the age of the child in machine format, gAlder, was set to the missing value -9999.
-// And when a user left the field, i.e., finished editing it by tabbing out of it or clicking elsewhere on the page,
-// the contents of the field were validated. Valid formats could be "" (a NULL string) or the "6:1" format where the first
-// integer should represent a reasonable year, say, between 1 and 10, and the second integer should represent a month,
-// i.e. minimum 0 and maximum 11. If an invalid value was given, the user should be alerted and told how to input age. Further
-// execution was stopped, so that if the user i.e. had clicked the button to show results, nothing would happen except the
-// alert for wrong input. Validity of text was checked by passing the text of the field to the function "yearMonthToDec" which would
-// return a number only if the input was valid. This function is defined in the current code.
-//
-// The page "PrintPage1", the output display, had a "to handle enterPage" handler. This would be activated when the page
-// was opened, i.e., when the page was displayed. It sent three commands (i.e., called three functions) in turn, namely:
-//	send toggleCalcAE // which manipulates the way meny items are displayed based on the contents of the global array gIsValidAE[]
-//	send adjustShowRasch // which manipuletes the way a menu item is displayed based on the global variable "svShowRasch"
-//	send setGraph 0 // which is the script that contains the main functionality for creating/displaying the output (0 is a parameter)
+  // SECTION "-- ******************** INPUT AND DATA MANIPULATION FORM / UI ****************************"
+
+  resetForm(): void {
+    // This function should clear the user interface / the input data. It is called when a "new" file/case
+    // is created (functionality: blank out the "navn"/note field, reset the "alder" and
+    // "kjonn" fields to the default, and blank out the 50 item data fields -- in other words, start with
+    // fresh data).
+  }
+
+  // SCRIPTS OF SEPARATE OBJECTS IN OPENSCRIPT -- THESE CAME AFTER THE "SECTIONED" PART IN THE DOCUMENT
+  //
+  // HARALD: The functionality of the scripts "to handle enterfield" and "to handle leavefield" of page "Start" (the input page)
+  // was to keep track of whether data had changed by user input. If any of the inputtable data had changed since last saved,
+  // the global variable currentFileIsSaved changed from TRUE to FALSE. This mattered for file saving - if the user wanted
+  // to close the program, or open another file, or start a new file, the user would be prompted for saving the data before proceeding if
+  // the data had changed.
+  //
+  // The "to handle buttonClick" handle of the button with name "Beregn" on page id 1 (page "Start") had the functionality to
+  // make the program prepare data for output, perform all calculations, and display output. This was achieved by:
+  // 1. Setting the global variable gUseItemSubset to "All" so results should be calculated based on all items;
+  // 2. sending the command (i.e., calling the function) "prepareInputForOutput" which in turn would trigger all the actions needed.
+  //
+  // The "to handle buttonClick" handle of the button with name "Toem" on page id 1 (page "Start") had the functionality to
+  // empty all data and set the global variable "gAlder" which represents the age of the child to the missing value -9999
+  //
+  // HARALD: The field "alder" of the page "Start" had two handlers: "on enterField" and "on leaveField". This is important
+  // functionality for the program results - this is the functionality that converts the age from the input and display format
+  // in years:months (e.g., like "6:1") to a number. The functionality of the scripts did the following:
+  // When a user entered the field, i.e., started editing it (by tabbing to it or clicking on it), the global variable
+  // that represents the age of the child in machine format, gAlder, was set to the missing value -9999.
+  // And when a user left the field, i.e., finished editing it by tabbing out of it or clicking elsewhere on the page,
+  // the contents of the field were validated. Valid formats could be "" (a NULL string) or the "6:1" format where the first
+  // integer should represent a reasonable year, say, between 1 and 10, and the second integer should represent a month,
+  // i.e. minimum 0 and maximum 11. If an invalid value was given, the user should be alerted and told how to input age. Further
+  // execution was stopped, so that if the user i.e. had clicked the button to show results, nothing would happen except the
+  // alert for wrong input. Validity of text was checked by passing the text of the field to the function "yearMonthToDec" which would
+  // return a number only if the input was valid. This function is defined in the current code.
+  //
+  // The page "PrintPage1", the output display, had a "to handle enterPage" handler. This would be activated when the page
+  // was opened, i.e., when the page was displayed. It sent three commands (i.e., called three functions) in turn, namely:
+  //	send toggleCalcAE // which manipulates the way meny items are displayed based on the contents of the global array gIsValidAE[]
+  //	send adjustShowRasch // which manipuletes the way a menu item is displayed based on the global variable "svShowRasch"
+  //	send setGraph 0 // which is the script that contains the main functionality for creating/displaying the output (0 is a parameter)
+}
