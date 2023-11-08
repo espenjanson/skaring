@@ -2503,6 +2503,177 @@ export class Skaring {
     // is later inputted by user.
   }
 
+  // DATA EXPORT FUNCTION "laesMangaFiler":
+  /*   The translator noted: 
+  The function you've provided is quite comprehensive and involves several file and directory operations that, as you've noted, 
+  are not straightforward in a browser environment due to security restrictions. However, with recent advancements, there are 
+  ways to handle some of these operations, albeit with certain limitations.
+
+  The primary challenges in converting this script to TypeScript for use in a browser are:
+  
+  1.	Choosing a directory and reading its contents: Browsers traditionally haven't allowed web pages to browse the file 
+      system. However, the recent Native File System API (also known as the File System Access API) allows web apps to 
+      read and write to user-selected files and directories. This feature is not yet universally supported and is behind 
+      a flag in some browsers.
+  2.	Creating and writing to a file directly on the user's system: This is also handled by the File System Access API but,
+      as mentioned, has limited support.
+  3.	Reading multiple files: The standard way to read files in a browser is through an <input type="file"> element, which 
+      allows users to select files. This can be set to allow multiple file selection.
+
+  Considering these challenges, here's how you might structure the laesMangeFiler function in TypeScript, using the 
+  File System Access API where possible and providing alternative strategies where it's not:
+*/
+
+  async laesMangeFiler() {
+    //   The translator noted:
+    //   This code uses the File System Access API to let the user select a directory and list its files, then write directly
+    //   to a file on the user's system. However, you'll need to handle browser compatibility and permissions carefully:
+    //   •	The showDirectoryPicker, showSaveFilePicker, and showOpenFilePicker methods are part of the File System Access API,
+    //    which at my last update (September 2021) is not supported by all browsers. You'll need to check the current compatibility
+    //    and potentially provide alternate solutions or instructions for users on unsupported browsers.
+    //   •	The File System Access API requires user permission to read or write files, and users can revoke these permissions at any
+    //   time. Your code will need to handle these cases gracefully.
+    //   •	The code assumes that functions like aapneFil and prepareInputForOutput are asynchronous and can handle File objects or
+    //   file contents directly. You might need to adjust these functions based on your actual implementation.
+    //   •	The code does not handle all the data formatting and calculations that your original script does, such as formatting
+    //   numbers, estimating ages, and handling missing values. You'll need to implement these based on your application's logic.
+    //   •	Since direct access to the file system is limited in browsers, the script does not delete the output file if it already
+    //   exists (as your original script does with removeFile32). The File System Access API lets you overwrite files, but you'll
+    //   need to handle cases where the user does not grant permission to do so.
+    //   Remember to test this thoroughly, handle exceptions, and provide clear user guidance, especially around browser support and
+    //   permissions. Also, keep an eye on the current status of the File System Access API and other relevant features in the browsers you're targeting.
+    // HARALD: THE WHOLE SCRIPT IS BLOCK COMMENTED OUT BECAUSE IT TRIGGERS SEVERAL ERRORS WHEN FUNCTIONALITY THAT
+    // IS NOT IMPLEMENTED/LINKED IS CALLED. INCLUDES CALLS TO window.showDirectoryPicker, window.showSaveFilePicker,
+    // and more.
+    /*
+
+
+    // You might need to check for browser support for the File System Access API
+    if (!('showDirectoryPicker' in window)) {
+        alert("Your browser does not support the required File System Access API.");
+        return;
+    }
+
+    try {
+        // Choose directory
+        const directoryHandle = await window.showDirectoryPicker();
+
+        // List files in directory
+        const files: File[] = [];
+        for await (const entry of directoryHandle.values()) {
+            if (entry.kind === 'file') {
+                files.push(await entry.getFile());
+            }
+        }
+
+        // Ask user for the output file name, here we can't set default directory or filters
+        const saveFileHandle = await window.showSaveFilePicker();
+
+        // Create a FileSystemWritableFileStream to write to
+        const writableStream = await saveFileHandle.createWritable();
+
+        // Write the headers to the file
+        let headers = "FILNAVN\tNOTAT\tKJØNN\tLOGALDER\t[BLANK]\tOPPGAVESKÅRER\tRASCHSKÅRE\tSTANDARDFEIL\tMINESTIMERT\tMAKSESTIMERT\tALDERSEKVIVALENT\tNEDRE GRENSE KONF.INT.\tØVRE GRENSE KONF.INT.\tMODELLBASERT PERSENTIL\tFILFORMAT\n";
+        await writableStream.write(headers);
+
+        // Process each file
+        for (const file of files) {
+            await this.aapneFil(file); // Assuming aapneFil is modified to handle File objects
+
+            this.prepareInputForOutput("X");
+
+            this.currentFileIsSaved = true;
+
+  // Construct the data line
+  
+  // The translator noted re. the data line construction in the following code lines:
+  
+  // Given that each field represents a different piece of data, we need to ensure that we're accessing 
+  // and formatting these fields properly.
+  
+  // However, please note that the actual implementation might differ based on how your data is structured 
+  // in TypeScript, the methods available for your class, and how data is retrieved from files or calculated. 
+  // Here, I'm assuming that after calling this.aapneFil(file) and this.prepareInputForOutput("X"), the 
+  // relevant data is stored in variables within your class instance (this).
+  
+  //   This script constructs the dataLine string by appending each field followed by a tab character (\t) 
+  //   to separate the fields in the output file. Please replace the method calls and property accesses with 
+  //   the actual ones you have in your TypeScript class. Also, ensure the proper handling of any special 
+  //   characters that might be included in your data strings (like quotes or tabs) as they could disrupt the 
+  //   formatting of your output file. The methods used for calculations, such as this.yearMonthToDec, 
+  //   this.estimateToPresentText, this.modellpersentilFraEstimat, and this.ageToMeasure, are placeholders 
+  //   for your actual calculation methods. 
+  
+  
+  // Initialize dataLine with the file name
+  let dataLine = `${file.name}\t`;
+  
+  // Add the 'navn' value. Assuming it's a string that doesn't contain tabs or newlines
+  dataLine += `${this.navn_value}\t`;
+  
+  // Add the 'KJØNN' value based on 'gutt_value' and 'jente_value'
+  dataLine += `${this.gutt_value ? "1" : (this.jente_value ? "0" : "9")}\t`;
+  
+  // Add the 'LOGALDER'. I'm assuming you have a method 'yearMonthToDec' that converts age to a decimal and 'ln' calculates the natural logarithm
+  let ageValue = this.alder_value ? this.ln(this.yearMonthToDec(this.alder_value)) : 0;
+  dataLine += `${ageValue.toFixed(3)}\t`;  // toFixed is used to format the number with three decimal places
+  
+  // Add an empty '[BLANK]' field
+  dataLine += `\t`;
+  
+  // Add 'OPPGAVESKÅRER', assuming 'gRawItemScoreString' holds the scores as a comma-separated string
+  dataLine += `"${this.gRawItemScoreString}"\t`;
+  
+  // Add 'RASCHSKÅRE', formatted to three decimal places
+  dataLine += `${this.gMeasure.toFixed(3)}\t`;
+  
+  // Add 'STANDARDFEIL', formatted to three decimal places
+  dataLine += `${this.gSE.toFixed(3)}\t`;
+  
+  // Add 'MINESTIMERT' based on 'gIsMinEstimated'
+  dataLine += `${this.gIsMinEstimated ? "1" : "0"}\t`;
+  
+  // Add 'MAKSESTIMERT' based on 'gIsMaxEstimated'
+  dataLine += `${this.gIsMaxEstimated ? "1" : "0"}\t`;
+  
+  // Add 'ALDERSEKVIVALENT', assuming 'estimateToPresentText' is a method that converts a measure to text
+  dataLine += `${this.estimateToPresentText(this.gMeasure)}\t`;
+  
+  // If 'gSE' is not -9999 and both 'gIsMinEstimated' and 'gIsMaxEstimated' are FALSE, calculate and add 'NEDRE GRENSE KONF.INT.' and 'ØVRE GRENSE KONF.INT.'
+  if (this.gSE !== -9999 && !this.gIsMinEstimated && !this.gIsMaxEstimated) {
+      let lowerBound = this.estimateToPresentText(this.gMeasure - 1.96 * this.gSE);
+      let upperBound = this.estimateToPresentText(this.gMeasure + 1.96 * this.gSE);
+      dataLine += `${lowerBound}\t${upperBound}\t`;
+  } else {
+      dataLine += `\t\t`;  // Adding two tabs for the empty fields
+  }
+  
+  // Add 'MODELLBASERT PERSENTIL' if 'gAlder' is not -9999, assuming 'modellpersentilFraEstimat' and 'ageToMeasure' are methods for your calculations
+  if (this.gAlder !== -9999) {
+      let percentile = this.modellpersentilFraEstimat(this.gMeasure - this.ageToMeasure(this.gAlder, this.gConvertParameter1, this.gConvertParameter2));
+      dataLine += `${percentile}\t`;
+  }
+  
+  // Add 'FILFORMAT'
+  dataLine += `${this.versionString}\t`;
+  
+  // Add a newline at the end to prepare for the next line of data
+  dataLine += `\n`;
+  
+          }
+  
+          // Close the file
+          await writableStream.close();
+  
+          // Reset for a new file
+          this.nyFil();
+  
+      } catch (err) {
+          console.error("There was an error", err);
+      }
+*/
+  }
+
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
 
   wrapMainCalculate() {
@@ -2964,7 +3135,8 @@ export class Skaring {
   // i.e. minimum 0 and maximum 11. If an invalid value was given, the user should be alerted and told how to input age. Further
   // execution was stopped, so that if the user i.e. had clicked the button to show results, nothing would happen except the
   // alert for wrong input. Validity of text was checked by passing the text of the field to the function "yearMonthToDec" which would
-  // return a number only if the input was valid. This function is defined in the current code.
+  // return a number only if the input was valid. This function is defined in the current code. If the age entered was in the
+  // correct format, the global variable gAlder should be set to the return value of the function yearMonthToDec().
   //
   // The page "PrintPage1", the output display, had a "to handle enterPage" handler. This would be activated when the page
   // was opened, i.e., when the page was displayed. It sent three commands (i.e., called three functions) in turn, namely:
