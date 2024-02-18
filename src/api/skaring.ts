@@ -7,8 +7,38 @@
 // import { saveAs } from 'file-saver';
 
 // fs is needed for file reading/writing.
-import * as fs from "fs";
+
 //
+
+function createTestInputStructure() {
+  return ["A", "B", "C", "D", "E"].reduce<string[]>(
+    (accumulator, currLetter) => {
+      return [
+        ...accumulator,
+        ...Array(10)
+          .fill(0)
+          .map((_, numberIndex) => currLetter + (numberIndex + 1).toString()),
+      ];
+    },
+    []
+  );
+}
+
+function sortObject(obj: Record<string, string>) {
+  // Sort keys and create a new sorted object
+  const testInputKeys = createTestInputStructure();
+
+  return testInputKeys.reduce((acc, key) => {
+    // Replace missing and invalid values with "9"
+    const dataValue = obj[key];
+    if (!dataValue || !["0", "1", "2"].includes(dataValue)) {
+      acc[key] = "9";
+    } else {
+      acc[key] = dataValue;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+}
 
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
@@ -118,17 +148,7 @@ export class Skaring {
       [1.99, 2.64, 3.05],
       [2.24, 2.92, 3.77],
     ];
-    this.gItemLabels = Array("ABCDE".length).reduce(
-      (accumulator, currLetter) => {
-        accumulator = [
-          ...accumulator,
-          ...Array(10)
-            .fill(0)
-            .map((_, numberIndex) => currLetter + (numberIndex + 1).toString()),
-        ];
-      },
-      []
-    );
+    this.gItemLabels = createTestInputStructure();
     this.gModelPercentiles = [
       [-4.2, 0],
       [-2.5, 1],
@@ -237,35 +257,52 @@ export class Skaring {
 
   // SECTION "-- ***************** PREPARATION OF OUTPUT ************************"
 
-  prepareInputForOutput(argA: string): void {
+  prepareInputForOutput(testInputData: Record<string, string>): void {
     const minValidItems = 3;
     const nineString = "9999999999999999999999999999999999999999999999999999";
     let dataString = "";
     let ctrK = 0;
 
-    for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
-      // HARALD: HÄR HÄMTAS DET DATA.
-      // "dataString" SKALL INNEHÅLLA 50 TECKEN OCH VART OCH ETT AV TECKNEN SKALL MOTSVARA (DET FÖRSTA) GILTIGA TECKNET
-      // I MOTSVARANDE FÄLT NÄR DE TAS I ORDNINGEN a1, a2, ... a10, b1 ... b10, ... e10. OM FÄLTET INTE INNEHÅLLER
-      // NÅGOT GILTIGT TECKEN ("0", "1" ELLER "2") SKALL MOTSVARANDE TECKEN I STRÄNGEN VARA "9"
-      // I'm not sure about the equivalent of "get ("i" & ctrJ)" in your context,
-      // so I've commented it out. You might need to replace this with appropriate logic.
-      // get ("i" & ctrJ);
-      // const fieldText = (text of field (It) of page "Start");
-      // Using dummy value for fieldText for now
-      const fieldText = "9";
+    const sortedTestInputData = sortObject(testInputData);
 
-      // HARALD: "fieldtext" I FÖLJANDE RAD BEHÖVER ÄNDRAS TILL ATT REFERERA TILL DATA:
+    for (const [index, [key, value]] of Object.entries(
+      sortedTestInputData
+    ).entries()) {
+      // Key will be A1, A2 etc., value will be the actual value, 0, 1, or 2
 
-      dataString += fieldText.charAt(0) === "9" ? "9" : fieldText;
+      dataString += value;
       if (dataString.charAt(dataString.length - 1) !== "9") {
         ctrK++;
       }
-      if (ctrJ % 10 === 0) {
-        this.gIsValidAE[ctrJ / 10] = !(ctrK < minValidItems);
+      if (index % 10 === 0) {
+        this.gIsValidAE[index / 10] = !(ctrK < minValidItems);
         ctrK = 0;
       }
     }
+
+    // for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
+    //   // HARALD: HÄR HÄMTAS DET DATA.
+    //   // "dataString" SKALL INNEHÅLLA 50 TECKEN OCH VART OCH ETT AV TECKNEN SKALL MOTSVARA (DET FÖRSTA) GILTIGA TECKNET
+    //   // I MOTSVARANDE FÄLT NÄR DE TAS I ORDNINGEN a1, a2, ... a10, b1 ... b10, ... e10. OM FÄLTET INTE INNEHÅLLER
+    //   // NÅGOT GILTIGT TECKEN ("0", "1" ELLER "2") SKALL MOTSVARANDE TECKEN I STRÄNGEN VARA "9"
+    //   // I'm not sure about the equivalent of "get ("i" & ctrJ)" in your context,
+    //   // so I've commented it out. You might need to replace this with appropriate logic.
+    //   // get ("i" & ctrJ);
+    //   // const fieldText = (text of field (It) of page "Start");
+    //   // Using dummy value for fieldText for now
+    //   const fieldText = "9";
+
+    //   // HARALD: "fieldtext" I FÖLJANDE RAD BEHÖVER ÄNDRAS TILL ATT REFERERA TILL DATA:
+
+    //   dataString += fieldText.charAt(0) === "9" ? "9" : fieldText;
+    //   if (dataString.charAt(dataString.length - 1) !== "9") {
+    //     ctrK++;
+    //   }
+    //   if (ctrJ % 10 === 0) {
+    //     this.gIsValidAE[ctrJ / 10] = !(ctrK < minValidItems);
+    //     ctrK = 0;
+    //   }
+    // }
 
     switch (this.gUseItemSubset) {
       case "A":
@@ -460,9 +497,14 @@ export class Skaring {
   convertVertices(vertices: {
     x1: number;
     y1: number;
-    x2: number;
-    y2: number;
-  }): any {
+    x2?: number;
+    y2?: number;
+  }): {
+    x1: number;
+    x2?: number;
+    y1: number;
+    y2?: number;
+  } {
     const outx1 =
       this.graphicBounds.x1 +
       ((vertices.x1 - this.legacyRectangle.x1) /
@@ -473,21 +515,26 @@ export class Skaring {
       ((vertices.y1 - this.legacyRectangle.y1) /
         (this.legacyRectangle.y2 - this.legacyRectangle.y1)) *
         (this.graphicBounds.y2 - this.graphicBounds.y1);
-    const outx2 =
-      this.graphicBounds.x1 +
-      ((vertices.x2 - this.legacyRectangle.x1) /
-        (this.legacyRectangle.x2 - this.legacyRectangle.x1)) *
-        (this.graphicBounds.x2 - this.graphicBounds.x1);
-    const outy2 =
-      this.graphicBounds.y1 +
-      ((vertices.y2 - this.legacyRectangle.y1) /
-        (this.legacyRectangle.y2 - this.legacyRectangle.y1)) *
-        (this.graphicBounds.y2 - this.graphicBounds.y1);
+
+    if (vertices.x2 && vertices.y2) {
+      const outx2 =
+        this.graphicBounds.x1 +
+        ((vertices.x2 - this.legacyRectangle.x1) /
+          (this.legacyRectangle.x2 - this.legacyRectangle.x1)) *
+          (this.graphicBounds.x2 - this.graphicBounds.x1);
+      const outy2 =
+        this.graphicBounds.y1 +
+        ((vertices.y2 - this.legacyRectangle.y1) /
+          (this.legacyRectangle.y2 - this.legacyRectangle.y1)) *
+          (this.graphicBounds.y2 - this.graphicBounds.y1);
+      return { x1: outx1, y1: outy1, x2: outx2, y2: outy2 };
+    }
+
     // HARALD: Note: Depending on what format TypeScript accepts for coordinates, it may
     // be necessary to round/adjust the four output numbers to integers. They are typically
     // decimal numbers after all the division above (while the four input numbers were integers).
-    const myOutput = { x1: outx1, y1: outy1, x2: outx2, y2: outy2 };
-    return myOutput;
+
+    return { x1: outx1, y1: outy1 };
   }
 
   createField(
@@ -702,19 +749,6 @@ export class Skaring {
     leftPT = rectangleTextAlign.x1;
     rightPT = rectangleTextAlign.x2;
  */
-
-    minage = this.gMinEstAge;
-    maxage = this.gMaxEstAge;
-    minMeasure = this.ageToMeasure(
-      minage,
-      this.gConvertParameter1,
-      this.gConvertParameter2
-    );
-    maxMeasure = this.ageToMeasure(
-      maxage,
-      this.gConvertParameter1,
-      this.gConvertParameter2
-    );
 
     const ageLinesMeasure = [
       -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0,
@@ -2113,21 +2147,9 @@ export class Skaring {
     if (this.gMeasure !== -9999) {
       const estimateLineVertices = {
         x1: leftPU,
-        y1: this.YPUFromMeasure(
-          this.gMeasure,
-          minMeasure,
-          maxMeasure,
-          maxPU,
-          minPU
-        ),
+        y1: this.YPUFromMeasure(this.gMeasure),
         x2: rightPU,
-        y2: this.YPUFromMeasure(
-          this.gMeasure,
-          minMeasure,
-          maxMeasure,
-          maxPU,
-          minPU
-        ),
+        y2: this.YPUFromMeasure(this.gMeasure),
       };
       this.setLineVertices("estimateline", estimateLineVertices);
       this.setLineVisibility("estimateline", true);
@@ -2139,21 +2161,9 @@ export class Skaring {
     if (this.gSE !== -9999 && !this.gIsMinEstimated && !this.gIsMaxEstimated) {
       const ciRectangleVertices = {
         x1: leftPU,
-        y1: this.YPUFromMeasure(
-          this.gMeasure + 1.96 * this.gSE,
-          minMeasure,
-          maxMeasure,
-          maxPU,
-          minPU
-        ),
+        y1: this.YPUFromMeasure(this.gMeasure + 1.96 * this.gSE),
         x2: rightPU,
-        y2: this.YPUFromMeasure(
-          this.gMeasure - 1.96 * this.gSE,
-          minMeasure,
-          maxMeasure,
-          maxPU,
-          minPU
-        ),
+        y2: this.YPUFromMeasure(this.gMeasure - 1.96 * this.gSE),
       };
       this.setRectangleVertices("CI", ciRectangleVertices);
       this.setRectangleVisibility("CI", true);
@@ -2317,7 +2327,7 @@ export class Skaring {
       // HARALD: In the translation, it was noted: "We're using the synchronous versions of the file reading/writing functions (readFileSync and writeFileSync)
       // for simplicity. However, in real-world scenarios, especially with large files or frequent IO operations, you might consider using the asynchronous
       // versions to avoid blocking the main thread." -- I don't anticipate large files or frequent IO operations, so is this an issue?
-      fs.writeFileSync(inFileName, content, "utf8");
+      // fs.writeFileSync(inFileName, content, "utf8");
       return 1; // success
     } catch (error) {
       // HARALD: The functionality in case of an error occurring (like: the file could not be created, or not written to) should be to return 0 without
@@ -2331,7 +2341,8 @@ export class Skaring {
   readNUBUFile(inFileName: string): number {
     // Writes to a file. See the previous function for file format definition.
     try {
-      const content: string = fs.readFileSync(inFileName, "utf8");
+      // const content: string = fs.readFileSync(inFileName, "utf8");
+      const content = "";
       const lines = content.split("\n");
       // HARALD: See previous function for a note re. text encoding (UTF-8 vs. Windows/ANSI), As above, I see below that the expected coding of the file to read
       // is set to "utf8". Will this create problems with compatability with previous Windows-created files (encoded Windows/ANSI), and/or if users move files
@@ -2816,7 +2827,8 @@ export class Skaring {
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
       let expectedScore = 0;
-
+      // Could be solution to problem with wrong standard error
+      expectedScoreVariance = 0;
       // HARALD: HAS REINSERTED PRINTING ITERATIONS FOR DEBUGGING PURPOSES.
       //     -- Prints iterations for debugging purposes.
       this.gCalculateDebugOutput =
@@ -2883,6 +2895,7 @@ export class Skaring {
       // -- Step 6. Obtain a better estimate M' of the measure M:
 
       newM = oldM + (rawScore - expectedScore) / expectedScoreVariance;
+
       if (Math.abs(newM - oldM) < convergence) {
         break;
       }
@@ -2984,23 +2997,32 @@ export class Skaring {
     return theIn;
   }
 
-  YPUFromMeasure(
-    theIn: number,
-    minMeasure: number,
-    maxMeasure: number,
-    maxPU: number,
-    minPU: number
-  ): number {
+  YPUFromMeasure(raschScore: number): number {
     // This function performs a linear transformation on the input value theIn, ensuring it is between minMeasure
     // and maxMeasure, and then maps it to a corresponding value between minPU and maxPU.
+    const minage = this.gMinEstAge;
+    const maxage = this.gMaxEstAge;
+    const minMeasure = this.ageToMeasure(
+      minage,
+      this.gConvertParameter1,
+      this.gConvertParameter2
+    );
+    const maxMeasure = this.ageToMeasure(
+      maxage,
+      this.gConvertParameter1,
+      this.gConvertParameter2
+    );
+
+    const maxPU = this.rectangleGraph.y1;
+    const minPU = this.rectangleGraph.y2;
 
     // Ensure theIn is between minMeasure and maxMeasure
-    theIn = Math.min(maxMeasure, Math.max(minMeasure, theIn));
+    raschScore = Math.min(maxMeasure, Math.max(minMeasure, raschScore));
 
     // Calculate the coordinate
     const output =
       minPU +
-      ((theIn - minMeasure) / (maxMeasure - minMeasure)) * (maxPU - minPU);
+      ((raschScore - minMeasure) / (maxMeasure - minMeasure)) * (maxPU - minPU);
     return output;
   }
 
