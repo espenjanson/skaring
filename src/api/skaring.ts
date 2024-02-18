@@ -44,6 +44,7 @@ export class Skaring {
   gItemLabels: string[];
   gAgeGroupThresholds: number[][];
   graphicBounds: { x1: number; y1: number; x2: number; y2: number };
+  legacyRectangle: { x1: number; y1: number; x2: number; y2: number };
   rectangleGraph: { x1: number; y1: number; x2: number; y2: number };
 
   // Global variables and constants for Rasch-measure calculations and error handling
@@ -197,10 +198,13 @@ export class Skaring {
     ];
     // graphicBounds is the metric of the actual (dynamic) output canvas excluding margins.
     // It will be redefined later, but is set to some arbitrary values here.
-    this.graphicBounds = { x1: 100, y1: 100, x2: 14900, y2: 22900 };
-    // rectangleGraph is the metric of the legacy ToolBook graphic display (graph). It is used
-    // for conversion:
+    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 29700 }; // A4 size in mm * 100 with 20 mm margins
+    // rectangleGraph is the metric of the legacy ToolBook graphic display (the adjustable stastical graph only,
+    // i.e., the diagram part.
     this.rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
+    // legacyRectangle are the bounds (vertices) of the usable drawing canvas (excluding margins) in legacy units.
+    // It is used for conversion to new vertices using graphicBounds as reference:
+    this.legacyRectangle = { x1: 516, y1: 132, x2: 9570, y2: 14790 };
 
     // Global variables and constants for Rasch-measure calculations and error handling
     this.gResult = 0;
@@ -451,7 +455,7 @@ export class Skaring {
 
   // HARALD: I wrote this function in TypeScript without testing it.
   // It should convert vertices in original ToolBook output page metric
-  // (relative to the rectangle this.rectangleGraph) to current output canvas
+  // (relative to the rectangle this.legacyRectangle) to current output canvas
   // metric (relative to the rectangle this.graphicBounds)
   convertVertices(vertices: {
     x1: number;
@@ -461,23 +465,23 @@ export class Skaring {
   }): any {
     const outx1 =
       this.graphicBounds.x1 +
-      ((vertices.x1 - this.rectangleGraph.x1) /
-        (this.rectangleGraph.x2 - this.rectangleGraph.x1)) *
+      ((vertices.x1 - this.legacyRectangle.x1) /
+        (this.legacyRectangle.x2 - this.legacyRectangle.x1)) *
         (this.graphicBounds.x2 - this.graphicBounds.x1);
     const outy1 =
       this.graphicBounds.y1 +
-      ((vertices.y1 - this.rectangleGraph.y1) /
-        (this.rectangleGraph.y2 - this.rectangleGraph.y1)) *
+      ((vertices.y1 - this.legacyRectangle.y1) /
+        (this.legacyRectangle.y2 - this.legacyRectangle.y1)) *
         (this.graphicBounds.y2 - this.graphicBounds.y1);
     const outx2 =
       this.graphicBounds.x1 +
-      ((vertices.x2 - this.rectangleGraph.x1) /
-        (this.rectangleGraph.x2 - this.rectangleGraph.x1)) *
+      ((vertices.x2 - this.legacyRectangle.x1) /
+        (this.legacyRectangle.x2 - this.legacyRectangle.x1)) *
         (this.graphicBounds.x2 - this.graphicBounds.x1);
     const outy2 =
       this.graphicBounds.y1 +
-      ((vertices.y2 - this.rectangleGraph.y1) /
-        (this.rectangleGraph.y2 - this.rectangleGraph.y1)) *
+      ((vertices.y2 - this.legacyRectangle.y1) /
+        (this.legacyRectangle.y2 - this.legacyRectangle.y1)) *
         (this.graphicBounds.y2 - this.graphicBounds.y1);
     // HARALD: Note: Depending on what format TypeScript accepts for coordinates, it may
     // be necessary to round/adjust the four output numbers to integers. They are typically
@@ -679,7 +683,7 @@ export class Skaring {
     // rectangleGraph and its components maxPU, minPU, leftPU, rightPU gives the coordinates in
     // ToolBook metric of the output elements in the visual graph. rectangleGraph is assigned in
     // the constructor.
-    //    let rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
+    // let rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
     maxPU = this.rectangleGraph.y1;
     minPU = this.rectangleGraph.y2;
     leftPU = this.rectangleGraph.x1;
@@ -765,11 +769,11 @@ export class Skaring {
     // should be the proportions of the drawing canvas, minus any margins we want, i.e.,
     // white space we want outside of drawing objects on the canvas. For example, if
     // the drawing canvas is defined (x1, x2, y1, y2 for upper-left xy and lower-right xy)
-    // to be of shape (0, 0, 15000, 23000) and one should want margins/white space of 100
-    // on all four sides, the graphicBounds should be set to (100, 100, 14900, 22900). This
+    // to be of shape (0, 0, 21000, 29700) and one should want margins/white space of 2000
+    // on all four sides, the graphicBounds should be set to (2000, 2000, 21000, 29700). This
     // will make the conversion of x and y coordinates from original ToolBook metric
     // to the actual, dynamic metric work. NEEDS TO BE DONE DYNAMICALLY:
-    this.graphicBounds = { x1: 100, y1: 100, x2: 14900, y2: 22900 };
+    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 2700 }; // A4 size in mm * 100 with 20 mm margins
 
     // The following code creates all output objects with default properties/contents:
     // HARALD: Commented-out create... calls are for objects that are legacy from ToolBook
@@ -1984,7 +1988,7 @@ export class Skaring {
     );
     this.createField(
       "copyright",
-      { x1: 15, y1: 14535, x2: 9570, y2: 14790 },
+      { x1: 516, y1: 14535, x2: 9570, y2: 14790 }, // was: x1: 15, y1: 14535, x2: 9570, y2: 14790, but that is outside bounds of canvas with margins.
       "Grete Andrup, Harald Janson og Bente Gjærum: NUBU 4-16 Motorisk test. © 2006-2023 Universitetsforlaget og Harald Janson. Alle rettigheter reservert.",
       true,
       "Sans",
@@ -2353,7 +2357,7 @@ export class Skaring {
       // HARALD: The translator wrote the following code which fails because gRawItemScoreString is a string and cannot be changed character by character.
       // I have replaced that by untried code I wrote just below. Also, the suggested translation does not seem to check if data is a valid character.
       // for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
-      //   this.gRawItemScoreString[ctrJ - 1] = lines[7].charAt(ctrJ - 1);
+      // this.gRawItemScoreString[ctrJ - 1] = lines[7].charAt(ctrJ - 1);
       // }
       let dataString: string = "";
       for (let ctrJ = 0; ctrJ < 50; ctrJ++) {
