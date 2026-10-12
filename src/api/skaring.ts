@@ -198,7 +198,7 @@ export class Skaring {
     ];
     // graphicBounds is the metric of the actual (dynamic) output canvas excluding margins.
     // It will be redefined later, but is set to some arbitrary values here.
-    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 29700 }; // A4 size in mm * 100 with 20 mm margins
+    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 27700 }; // A4 size in mm * 100 with 20 mm margins
     // rectangleGraph is the metric of the legacy ToolBook graphic display (the adjustable stastical graph only,
     // i.e., the diagram part.
     this.rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
@@ -769,11 +769,11 @@ export class Skaring {
     // should be the proportions of the drawing canvas, minus any margins we want, i.e.,
     // white space we want outside of drawing objects on the canvas. For example, if
     // the drawing canvas is defined (x1, x2, y1, y2 for upper-left xy and lower-right xy)
-    // to be of shape (0, 0, 21000, 29700) and one should want margins/white space of 2000
+    // to be of shape (0, 0, 21000, 27700) and one should want margins/white space of 2000
     // on all four sides, the graphicBounds should be set to (2000, 2000, 21000, 29700). This
     // will make the conversion of x and y coordinates from original ToolBook metric
     // to the actual, dynamic metric work. NEEDS TO BE DONE DYNAMICALLY:
-    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 2700 }; // A4 size in mm * 100 with 20 mm margins
+    this.graphicBounds = { x1: 2000, y1: 2000, x2: 19000, y2: 27700 }; // A4 size in mm * 100 with 20 mm margins
 
     // The following code creates all output objects with default properties/contents:
     // HARALD: Commented-out create... calls are for objects that are legacy from ToolBook
