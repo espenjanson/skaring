@@ -1,0 +1,1865 @@
+19.01.2022 21:01:17 p.m.
+
+
+----------------------------------------------------------------------
+Book "C:\Users\psyko\OneDrive\Dokumenter\Grete\Skaaringsprogram 2021 TB115\Motoriske oppgaver i NUBU 4-16 v39.tbk"
+----------------------------------------------------------------------
+to get yearDecToMonth REAL theIn
+	local STRING output
+	local INT vYear
+	local INT vMonth
+	vYear = truncate(theIn)
+	vMonth = truncate(((theIn-vYear))*12)
+	return (vYear & ":" & vMonth)
+end yearDecToMonth
+
+to get yearMonthToDec STRING theIn
+	local LONG ctrJ
+	step ctrJ from 1 to charCount(theIn)
+		if char ctrJ of theIn is not in "01234567890:" then
+			set sysError to ("Invalid input for yearMonthToDec: " & theIn)
+			return NULL
+		end if
+	end step
+	local LONG colonOffset
+	get offset (":", theIn)
+	if It is 0 then
+		set sysError to "Missing : in input for yearMonthToDec"
+		return NULL
+	else
+		colonOffset = It
+	end if
+	-- förutsätter att input är OK nu.
+	local INT vYear
+	local INT vMonth
+	vYear = (chars 1 to (colonOffset-1) of theIn)
+	vMonth = (chars (colonOffset+1) to charCount(theIn) of theIn)
+	local REAL output
+	output = vYear + (vMonth/12) + 1/24   -- därför att i genomsnitt 1/2 månad försvinner vid trunkeringen
+	return output
+end yearMonthToDec
+
+to get estimateToPresentText REAL theIn
+	local REAL ageEquivalent
+	ageEquivalent = exp((text of field "param1" of page "Calculate")+((\
+	text of field "param2" of page "Calculate")*theIn))
+	local STRING output
+	conditions
+		when ageEquivalent < (text of field "minest" of page "Calculate")
+			output = "Lavere enn " & yearDecToMonth(text of field "minest" of page "Calculate")
+		when ageEquivalent > (text of field "maxest" of page "Calculate")
+			output = "Høyere enn " & yearDecToMonth(text of field "maxest" of page "Calculate")
+		else -- value within range
+			output = yearDecToMonth(ageEquivalent)
+	end conditions
+	return output
+end estimateToPresentText
+
+to handle enterbook
+	sysDateFormat = "dd.mm.yyyy"
+	sysDecimal = "."
+	sysList = ","
+	pCalc of button "Beregn" of page "Start" = "All"
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	system LOGICAL svShowRasch
+	svShowRasch = FALSE
+	currentFile = NULL
+	caption of mainWindow = "Skåring av motoriske oppgaver i NUBU 4-16 (Ikke lagret)"
+	currentFileIsSaved = TRUE -- will not ask
+	-- och sänder "Ny fil" bare for å tømme ev formular og hva det skulle være.
+	send nyFil
+	forward
+end
+
+to get validDateSecondsFromNorwegian STRING theIn
+	get sysDate
+	format date it as "yyyy-mm-dd" from sysDateFormat
+	local STRING thisYear
+	thisYear = chars 1 to 4 of It
+	get theIn
+	if isType(date,It,"d.m.") is TRUE then
+		get (It & thisYear)
+		format date It as seconds from "d.m.yyyy"
+		return It
+	else
+		if isType(date,It,"dd.mm.") is TRUE then
+			get (It & thisYear)
+			format date It as seconds from "dd.mm.yyyy"
+			return It
+		else
+			if isType(date,It,"d.m.yy") is TRUE then
+				format date It as seconds from "d.m.yy"
+				return It
+			else
+				if isType(date,It,"dd.mm.yy") is TRUE then
+					format date It as seconds from "dd.mm.yy"
+					return It
+				else
+					if isType(date,It,"d.m.yyyy") is TRUE then
+						format date It as seconds from "d.m.yyyy"
+						return It
+					else
+						if isType(date,It,"dd.mm.yyyy") is TRUE then
+							format date It as seconds from "dd.mm.yyyy"
+							return It
+						else
+							return -1
+						end if
+					end if
+				end if
+			end if
+		end if
+	end if
+end
+
+to handle hj_error STRING theIn
+	beep 1
+	request theIn
+	break to system
+end
+
+to handle closePrintPreview
+	if isOpen of viewer "PrintPreview" is TRUE then
+		in mainWindow
+			close viewer "PrintPreview"
+		end in
+	end if
+end
+
+to handle adjustBook
+	local aModellpersentiler[][],aAldersgruppepersentiler[][]
+	local STRING aItemnavn[]
+	clear pModellpersentiler of self
+	clear pAldersgruppepersentiler of self
+	clear pItemnavn of self
+	fill aModellpersentiler with (text of field "modellpersentiler" of page "Calculate" of self) \
+	in [textline][item] order
+	fill aAldersgruppepersentiler with (text of field "aldersgruppepersentiler" of page "Calculate" of self) \
+	in [textline][item] order
+	fill aItemnavn with (text of field "itemnavn" of page "Calculate" of self) \
+	in [textline] order
+	pModellpersentiler of self = aModellpersentiler
+	pAldersgruppepersentiler of self = aAldersgruppepersentiler
+	pItemnavn of self = aItemnavn
+	in mainWindow;currentPage of mainWindow = page "Start" of self;send adjustMe to page "Start" of self;end in
+end
+	
+to get modellpersentilFraEstimat REAL theIn
+	--theIn skal nå rundes av til nærmeste multipel av 0.05 for å 
+	--tilsvare tabellen.
+	theIn = round(theIn*20)/20
+	local LONG ctrJ
+	local aModellpersentiler[][]
+	local WORD antallTabellrader
+	aModellpersentiler = pModellpersentiler of self
+	antallTabellrader = (item 1 of dimensions(aModellpersentiler))
+	if theIn <= aModellpersentiler[1][1] then
+		return aModellpersentiler[1][2]
+	end if
+	ctrJ = 2
+	while theIn > aModellpersentiler[ctrJ][1] and (ctrJ < antallTabellrader)
+		increment ctrJ
+	end while
+	return aModellpersentiler[ctrJ][2] -- den siste må være 100.
+end
+
+to get aldersgruppepersentilerFraEstimat REAL theIn
+	local aAldersgruppepersentiler[][]
+	aAldersgruppepersentiler = pAldersgruppepersentiler of self
+	local STACK whatGroup -- can be 1 to 4 depending on limits
+	local LONG ctrJ
+	step ctrJ from (item 1 of dimensions(aAldersgruppepersentiler)) to 1 by -1
+		if theIn <= aAldersgruppepersentiler[ctrJ][2] then
+			push 1 onto WhatGroup
+			continue step ctrJ
+		else
+			if theIn <= aAldersgruppepersentiler[ctrJ][3] then
+				push 2 onto WhatGroup
+				continue step ctrJ
+			else
+				if theIn <= aAldersgruppepersentiler[ctrJ][4] then
+					push 3 onto WhatGroup
+					continue step ctrJ
+				else
+					push 4 onto WhatGroup --i.e., over 85th percentile.
+				end if
+			end if
+		end if
+	end step
+	--konstruerar textoutput
+	local STRING output
+	textline ((item 1 of dimensions(aAldersgruppepersentiler))+2) of output = " "
+	local WORD strlen1,strlen2,strlen3,strlen4,strlen5
+	strlen1 = 17
+	strlen2 = 12
+	strlen3 = 12
+	strlen4 = 12
+	strlen5 = 12
+	put LText("Aldersgruppe",strlen1) & \
+	CText("-15.",strlen2) & \
+	CText(">15.-50.",strlen3) & \
+	CText(">50.-85.",strlen4) & \
+	CText(">85.",strlen5) \
+	into textline 1 of output
+	put LText("========================",strlen1) &&  \
+	RText("========================",strlen2-1) && \
+	RText("========================",strlen3-1) && \
+	RText("========================",strlen4-1) && \
+	RText("========================",strlen5-1) \
+	into textline 2 of output
+	step ctrJ from 1 to (item 1 of dimensions(aAldersgruppepersentiler))
+		put LText(aAldersgruppepersentiler[ctrJ][1],strlen1) into textline (ctrJ+2) of output
+		if item ctrJ of WhatGroup = 1 then
+			put CText("X",strlen2) after textline (ctrJ+2) of output
+		else
+			put LText(NULL,strlen2) after textline (ctrJ+2) of output
+		end if
+		if item ctrJ of WhatGroup = 2 then
+			put CText("X",strlen3) after textline (ctrJ+2) of output
+		else
+			put LText(NULL,strlen3) after textline (ctrJ+2) of output
+		end if
+		if item ctrJ of WhatGroup = 3 then
+			put CText("X",strlen4) after textline (ctrJ+2) of output
+		else
+			put LText(NULL,strlen4) after textline (ctrJ+2) of output
+		end if
+		if item ctrJ of WhatGroup = 4 then
+			put CText("X",strlen5) after textline (ctrJ+2) of output
+		else
+			put LText(NULL,strlen5) after textline (ctrJ+2) of output
+		end if
+	end step
+	put (CRLF & LText(NULL,strlen1) & \
+	CText("- - - - - - Faktisk persentil i referansegruppen - - - - - -",(strlen2+strlen3+strlen4+strlen5)) \
+	& CRLF) before output
+	put CRLF after output
+	return output
+end
+
+to get LText STRING theIn, WORD nofChars
+	return chars 1 to nofChars of (theIn & "                                                                                                    ")
+	-- 100 chars
+end
+
+to get RText STRING theIn, WORD nofChars
+	get ("                                                                                                    " & theIn) 
+	-- 100 chars
+	local charCountString
+	charCountString=charCount(It)
+	return (chars (charCountString-nofChars+1) to charCountString of It)
+end
+
+to get CText STRING theIn, WORD nofChars
+	get ("                                                  " & theIn & "                                                  ") 
+	-- 50 chars + theIn + 50 chars
+	local charCountString
+	charCountString=charCount(It)
+	return (chars 1 to nofChars of \
+	(chars (round((charCountString-nofChars)/2)+1) to charCountString of It))
+end
+
+to handle openPrintPreview
+	send buttonClick to button "beregn" of page "Start"
+end
+
+to handle printResults
+	local LOGICAL goBackToPreview
+	goBackToPreview = (isOpen of viewer "PrintPreview" of self)
+	in mainWindow
+		send closePrintPreview
+		printerStyle = pages
+		printerScaling = actual -- was: printer
+		printerBorders = false
+		printerMargins = 1133,1133,1133,1133 -- 2 cm
+		sysSuspend = FALSE
+		sysSuspendMessages = TRUE
+		go to page "PrintPage1"
+		start spooler
+			print 1 pages
+		end spooler
+		local string myError
+		myError = sysError
+		go to page "Start"
+		lockScreen of mainWindow = FALSE
+		sysSuspend = TRUE
+		sysSuspendMessages = FALSE
+		if myError <> "ok" and myError <> "" then
+			request "Kunne ikke skrive ut. Prøv å endre skriverinstillingene, og forsøk igjen."
+		end if
+	end in
+	activate mainWindow
+	if (goBackToPreview) then
+		send buttonClick to button "Beregn" of page "Start"
+	end if
+end 
+
+to handle suggestAge
+	if pDate of field "fodtdato" is not NULL and pDate of field "testdato" is not NULL then
+		pAlder of field "alder" = ((pDate of field "testdato" - pDate of field "fodtdato")/(86400*365.25))
+		text of field "alder" = yearDecToMonth(pAlder of field "alder")
+		activated of field "alder" = true
+		fillColor of field "alder" = lightGray
+		useWindowsColors of field "alder" = FALSE
+	else
+		activated of field "alder" = false
+		fillColor of field "alder" = white
+		useWindowsColors of field "alder" = TRUE
+	end if	
+end
+
+to handle lagreFil
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	if currentFile is NULL then
+		send lagreSomFil to self
+		break lagreFil
+	end if
+	--lagrer fil her
+	if writeNUBUFile (currentFile) is 1 then
+		caption of mainWindow = RText(("Skåring av motoriske oppgaver i NUBU 4-16 (" & hj_shortFileName(currentFile) & ")"),77)
+		currentFileIsSaved = TRUE
+	else
+		request "Kunne ikke lagre filen " & currentFile & "."
+		break to system -- så får anvenderen bestemme hva som skal gjøres.
+	end if
+end
+to handle lagreSomFil
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	filterList = "Tekstfil (*.txt),*.txt,NUBU 4-16-fil (*.~Z4),*.~Z4,Alle filer (*.*),*.*"
+	get saveAsDlg32("Lagre som:","*.~Z4",null,filterList,2)
+	local STRING dum1
+	local INT scrap1 -- not used for calc just for retval
+	if It is null
+		-- doNothing
+		break to system
+	else
+		dum1 = It
+		if writeNUBUFile(dum1) = 1 then -- success
+			currentFile = dum1
+			currentFileIsSaved = TRUE
+			caption of mainWindow = RText(("Skåring av motoriske oppgaver i NUBU 4-16 (" & hj_shortFileName(currentFile) & ")"),77)
+			scrap1 = setCurrentDirectory32(hj_Path(currentFile))
+		else -- problem
+			request "Kunne ikke lagre data i filen " & dum1 & " ."
+			break to system
+		end if
+	end if
+
+end
+to handle aapneFil argA, argB, argC
+	-- argA kan vara "X" och då förväntas ett giltigt filnamn i argB, dialog visas inte
+	if keyState(keyControl) is DOWN then
+		-- då anropas ett skript som läser en datafil skriven på ett visst sätt.
+		send aapneASCIIFIl to self
+		break aapneFil
+	end if
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	if currentFileIsSaved = FALSE then
+		--ask
+		request "Vil du lagre endringene?" with "&Ja" or "&Nei"
+		if It is not "Nei" then
+			send lagreFil
+		end if
+	end if
+	-- åpner fil
+	local STRING dum1
+	local INT scrap1 -- not used for calc just for retval
+	if argA is not "X" then
+		filterList = "Tekstfil (*.txt),*.txt,NUBU 4-16-fil (*.~Z4),*.~Z4,Alle filer (*.*),*.*"
+		get openFileDlg32("Åpne fil:",null,null,filterList,2)
+	else -- filnamn från argument
+		get argB
+	end if
+	if It is null then
+		--donothing; user can cancel.
+	else
+		dum1 = It
+		if readNUBUFile (dum1) = 1 then -- success
+			currentFile = dum1
+			currentFileIsSaved = TRUE
+			caption of mainWindow = RText(("Skåring av motoriske oppgaver i NUBU 4-16 (" & hj_shortFileName(currentFile) & ")"),77)
+			scrap1 = setCurrentDirectory32(hj_Path(currentFile))
+		else
+			request "Filen " & dum1 & " kunne ikke leses av programmet."
+			--filstatus og vindustatus forblir som før.
+		end if
+	end if
+	
+end
+
+to handle nyFil
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	if currentFileIsSaved = FALSE then
+		--ask
+		request "Vil du lagre endringene?" with "&Ja" or "&Nei"
+		if It is not "Nei" then
+			send lagreFil
+		end if
+	end if
+	send buttonClick to button "Toem" of page "Start"
+	currentFile = NULL
+	caption of mainWindow = "Skåring av motoriske oppgaver i NUBU 4-16 (Ikke lagret)"
+	currentFileIsSaved = TRUE -- will not ask
+end
+to get writeNUBUFile STRING inFileName
+	--filformat: Rader NYTT FRAAN JAN06: Rad9 är en versionssträng.
+	--1. Navn
+	--2. checked of button "gutt" && checked of button "jente"
+	--3. Fodtdato
+	--4. Testdato
+	--5. Alder
+	--6. Merknad
+	--7. Merknad2
+	--8. 50 items (tas fra punchingside)
+	--9. Versionssträng "NUBUMotor_100" för denna version (1.0.0, januari 2006)
+	sysSuspend = FALSE
+	closeFile inFileName
+	sysError = NULL
+	createFile inFileName
+	if sysError <> NULL and sysError <> "ok" then
+		return 0
+	end if
+	sysError = NULL
+	local LONG ctrJ
+	local STRING dataString
+	step ctrJ from 1 to 50
+		get ("i" & ctrJ)
+		if text of field (It) of page "Start" of self = NULL then
+			put "*" after \
+			dataString
+		else
+			put char 1 of ((text of field (It) of page "Start" of self) & "9") after \
+			dataString
+		end if
+	end step
+	get ((text of field "Navn" of page "Start" of self) & CRLF & \
+	(checked of button "gutt" of page "Start" of self) && \
+	(checked of button "jente" of page "Start" of self) & CRLF & \
+	(text of field "Fodtdato" of page "Start" of self) & CRLF & \
+	(text of field "Testdato" of page "Start" of self) & CRLF & \
+	(text of field "Alder" of page "Start" of self) & CRLF & \
+	(text of field "Merknad" of page "Start" of self) & CRLF & \
+	(text of field "Merknad2" of page "Start" of self) & CRLF & \
+	(datastring) & CRLF & \
+	"NUBUMotor_100" & CRLF)
+	sysError = NULL
+	writeFile It to inFileName
+	if sysError <> NULL and sysError <> "ok" then
+		return 0
+	end if
+	sysError = NULL
+	closeFile inFileName
+	if sysError <> NULL and sysError <> "ok" then
+		return 0
+	end if
+	sysSuspend = TRUE
+	return 1 -- success
+end
+
+to get readNUBUFile STRING inFileName
+	--filformat: Rader
+	--1. Navn
+	--2. checked of button "gutt" && checked of button "jente"
+	--3. Fodtdato
+	--4. Testdato
+	--5. Alder
+	--6. Merknad
+	--7. Merknad2
+	--8. 50 items (på punchingside)
+	--9. Versionssträng "NUBUMotor_100" för denna version (1.0.0, januari 2006)
+	sysSuspend = FALSE
+	closeFile inFileName
+	sysError = NULL
+	openFile inFileName
+	if sysError <> NULL and sysError <> "ok" then
+		return 0
+	end if
+	readFile inFileName to eof -- kan inte vara > 32000 ngt.
+	if sysError <> NULL and sysError <> "ok" then
+		return 0
+	end if
+	sysError = NULL
+	if (textline 9 of It) <> "NUBUMotor_100" then
+		request "Ukjent filformat. Vil du fortsette?" with "&Fortsett" or "&Avbryt"
+		if It is not "Fortsett" then
+			closeFile inFileName
+			break to system
+		else
+			--må lese filen igjen, for "Fortsett" har nå fylt opp It.
+			sysSuspend = FALSE
+			closeFile inFileName
+			sysError = NULL
+			openFile inFileName
+			if sysError <> NULL and sysError <> "ok" then
+				return 0
+			end if
+			readFile inFileName to eof -- kan inte vara > 32000 ngt.
+			if sysError <> NULL and sysError <> "ok" then
+				return 0
+			end if
+			sysError = NULL
+		end if
+	end if
+	(text of field "Navn" of page "Start" of self) = textline 1 of It
+	(checked of button "gutt" of page "Start" of self) = word 1 of textline 2 of It
+	(checked of button "jente" of page "Start" of self) = word 2 of textline 2 of It
+	(text of field "Fodtdato" of page "Start" of self) = textline 3 of It
+	(text of field "Testdato" of page "Start" of self) = textline 4 of It
+	(text of field "Alder" of page "Start" of self) = textline 5 of It
+	(text of field "Merknad" of page "Start" of self) = textline 6 of It
+	(text of field "Merknad2" of page "Start" of self) = textline 7 of It
+	local LONG ctrJ
+	local STRING dataString
+	dataString = textline 8 of It
+	local STRING dum1
+	step ctrJ from 1 to 50
+		get ("i" & ctrJ)
+		dum1 = char ctrJ of (datastring & \
+		"99999999999999999999999999999999999999999999999999")
+		if dum1 is not "*" then
+			(text of field (It) of page "Start" of self) = dum1
+		else
+			(text of field (It) of page "Start" of self) = NULL
+		end if
+	end step
+	send leaveField to field "fodtdato" of page "Start"
+	send leaveField to field "testdato" of page "Start"
+	send leaveField to field "alder" of page "Start"
+	send suggestAge to page "Start"
+	sysError = NULL
+	closeFile inFileName
+	sysError = NULL
+	sysSuspend = TRUE
+	return 1 -- success
+end
+
+to handle leaveBook
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	if currentFileIsSaved = FALSE then
+		--ask
+		request "Vil du lagre endringene?" with "&Ja" or "&Nei"
+		if It is not "Nei" then
+			send lagreFil
+		end if
+	end if
+	forward
+end
+
+to handle aapneASCIIFIl
+	system STRING currentFile
+	system LOGICAL currentFileIsSaved
+	request "Du har holdt nede Ctrl når du valgte Åpne. Dette aktiverer et komplekst makro for lesing av en ASCII datafil i bestemt format med data for mange personer. Er det dette du vil gjøre, klikk på Ja. Ellers klikk på Nei, og hold ikke nede Ctrl neste gang du velger Åpne." \
+	with "Ja" or "Nei"
+	if It is not "Ja" then
+		break aapneASCIIFil
+	end if
+	-- sätter fokus till ett annat fält	
+	select text of field "Navn" of page "Start"
+	--har följande fixa format: 
+	--1. Logålder (F5.2)  = 1 till 5
+	--2. Kön 0=Jente 1=Gutt = 6 till 6
+	--3  50 items  7 till 56, samma ordning som i inmatningsfälten.
+	--4. Navn (resten av linjen) 57 till resten.
+	local LOGICAL hj_skrivSeparateFiler
+	local LOGICAL hj_skrivUt
+	local STRING hj_thisDir
+	hj_thisDir = name of this book
+	do
+		clear last char of hj_thisDir
+	until last char of hj_thisDir = "\"
+	if last char of hj_thisDir is not "\" then
+		put "\" after hj_thisDir
+	end if
+	request "Vill du skrive till separate filer?" with "Ja" or "Nei"
+	if It is "Ja" then
+		hj_skrivSeparateFiler = TRUE
+		hj_thisDir = chooseDirectoryDlg32("Velg mappe for de nye filene:",hj_thisDir)
+	end if
+	request "Vill du skrive ut alle personene på skriveren?" with "Ja" or "Nei"
+	if It is "Ja" then
+		hj_skrivUt = TRUE
+	end if
+	if currentFileIsSaved = FALSE then
+		--ask
+		request "Vil du lagre endringene i den nåværende filen?" with "&Ja" or "&Nei"
+		if It is not "Nei" then
+			send lagreFil
+		end if
+	end if
+	-- åpner fil
+	filterList = "Tekstfil (*.txt),*.txt,ASCII datafil (*.dat),*.dat,Alle filer (*.*),*.*"
+	get openFileDlg32("Åpne fil:",null,null,filterList,2)
+	local STRING inFileName
+	if It is null then
+		--donothing; user can cancel.
+	else
+		inFileName = It
+		sysSuspend = FALSE
+		closeFile inFileName
+		sysError = NULL
+		openFile inFileName
+		if sysError <> NULL and sysError <> "ok" then
+			request "Error 1"
+			break to system
+		end if
+		do
+			currentFile = NULL
+			caption of mainWindow = "Skåring av motoriske oppgaver i NUBU 4-16 (Ikke lagret)"
+			currentFileIsSaved = TRUE -- will not ask
+			readFile inFileName to LF -- leser pr rad
+			if charCount(It) < 1 then
+				break do -- no more to read
+			end if
+			if sysError <> NULL and sysError <> "ok" then
+				request "Error 2"
+				break to system
+			end if
+			if charCount(It) < 56 then
+				continue do -- not 50 items to read
+			end if
+			sysError = NULL
+			send buttonClick to button "Toem" of page "Start" -- tømmer
+			(text of field "Navn" of page "Start" of self) = chars 57 to (charCount(It)-1) of It -- -1 because the last is CR
+			if char 6 of It is 1 then
+				(checked of button "gutt" of page "Start" of self) = true
+			else
+				(checked of button "gutt" of page "Start" of self) = false
+			end if
+			if char 6 of It is 0 then
+				(checked of button "jente" of page "Start" of self) = true
+			else
+				(checked of button "jente" of page "Start" of self) = false
+			end if
+			(text of field "Alder" of page "Start" of self) = yearDecToMonth(exp(chars 1 to 5 of It))
+			(text of field "testdato" of page "Start" of self) = NULL -- because filled
+			local LONG ctrJ
+			local STRING dataString
+			dataString = chars 7 to 56 of It
+			local STRING dum1,dumFeltnavn
+			step ctrJ from 1 to 50
+				dumFeltnavn = ("i" & ctrJ)
+				dum1 = char ctrJ of (datastring & \
+				"99999999999999999999999999999999999999999999999999")
+				if dum1 is not "*" then
+					(text of field (dumFeltnavn) of page "Start" of self) = dum1
+				else
+					(text of field (dumFeltnavn) of page "Start" of self) = NULL
+				end if
+			end step
+			send leaveField to field "fodtdato" of page "Start"
+			send leaveField to field "testdato" of page "Start"
+			send leaveField to field "alder" of page "Start"
+			-- nå er det vel lest inn, da.
+			if (hj_skrivSeparateFiler) then
+				--skaper på navn
+				dumFeltnavn = text of field "Navn" of page "Start" of self
+				dum1 = NULL
+				
+				while (fileExists32(hj_thisDir & dumFeltnavn & dum1 & ".~Z4") = 1) or dumFeltnavn = NULL -- exists
+					put char (random(22)) of "ABCDEFGHKLMNPQRSTUVXYZ___" after dum1
+				end while
+				currentFile = (hj_thisDir & dumFeltnavn & dum1 & ".~Z4")
+				caption of mainWindow = RText(("Skåring av motoriske oppgaver i NUBU 4-16 (" & hj_shortFileName(currentFile) & ")"),77)
+				currentFileIsSaved = TRUE -- will not ask
+				if writeNUBUFile(currentFile) = 0 then
+					request "Error3"
+					break to system
+				end if
+			end if
+			if (hj_skrivUt) then
+				in mainWindow
+					send openPrintPreview
+				end in
+				in viewer "printPreview"
+					send printResults
+				end in
+			end if
+		until FALSE
+		closeFile inFileName
+		sysError = NULL
+		sysSuspend = TRUE
+	end if	
+end
+
+to get hj_shortFileName STRING theIn
+	while "\" is in theIn
+		clear first char of theIn
+	end while
+	return theIn
+end
+
+to get hj_Path STRING theIn
+	while last char of theIn is not "\"
+		clear last char of theIn
+	end while
+	return theIn
+end
+
+to handle toggleShowRasch
+	system LOGICAL svShowRasch
+	in viewer "printPreview"
+		if not menuItemChecked("toggleShowRasch")
+			check menuItem "toggleShowRasch"
+			svShowRasch = TRUE
+			send setGraph 0 to page "printPage1" of self
+		else
+			uncheck menuItem "toggleShowRasch"
+			svShowRasch = FALSE
+			send setGraph 0 to page "printPage1" of self
+		end if
+	end in
+end toggleShowRasch
+
+to handle calcAll
+	pCalc of button "Beregn" of page "Start" of self = "All"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		check menuItem "calcAll"
+		uncheck menuItem "calcA"
+		uncheck menuItem "calcB"
+		uncheck menuItem "calcC"
+		uncheck menuItem "calcD"
+		uncheck menuItem "calcE"
+	end in
+end calcAll
+
+to handle calcA
+	pCalc of button "Beregn" of page "Start" of self = "A"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		uncheck menuItem "calcAll"
+		check menuItem "calcA"
+		uncheck menuItem "calcB"
+		uncheck menuItem "calcC"
+		uncheck menuItem "calcD"
+		uncheck menuItem "calcE"
+	end in
+end calcA
+
+to handle calcB
+	pCalc of button "Beregn" of page "Start" of self = "B"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		uncheck menuItem "calcAll"
+		uncheck menuItem "calcA"
+		check menuItem "calcB"
+		uncheck menuItem "calcC"
+		uncheck menuItem "calcD"
+		uncheck menuItem "calcE"
+	end in
+end calcB
+
+to handle calcC
+	pCalc of button "Beregn" of page "Start" of self = "C"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		uncheck menuItem "calcAll"
+		uncheck menuItem "calcA"
+		uncheck menuItem "calcB"
+		check menuItem "calcC"
+		uncheck menuItem "calcD"
+		uncheck menuItem "calcE"
+	end in
+end calcC
+
+to handle calcD
+	pCalc of button "Beregn" of page "Start" of self = "D"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		uncheck menuItem "calcAll"
+		uncheck menuItem "calcA"
+		uncheck menuItem "calcB"
+		uncheck menuItem "calcC"
+		check menuItem "calcD"
+		uncheck menuItem "calcE"
+	end in
+end calcD
+
+to handle calcE
+	pCalc of button "Beregn" of page "Start" of self = "E"
+	in mainWindow
+		close viewer "printPreview"
+		send buttonClick to button "Beregn" of page "Start" of self
+	end in
+	in viewer "printPreview"
+		uncheck menuItem "calcAll"
+		uncheck menuItem "calcA"
+		uncheck menuItem "calcB"
+		uncheck menuItem "calcC"
+		uncheck menuItem "calcD"
+		check menuItem "calcE"
+	end in
+end calcE
+
+to handle toggleCalcAE
+	local LOGICAL vIsValidAE[5]
+	vIsValidAE = pIsValidAE of button "Beregn" of page "Start" of self
+	in viewer "printPreview"
+		if vIsValidAE[1] then
+			enable menuItem "calcA"
+		else
+			disable menuItem "calcA"
+		end if
+		if vIsValidAE[2] then
+			enable menuItem "calcB"
+		else
+			disable menuItem "calcB"
+		end if
+		if vIsValidAE[3] then
+			enable menuItem "calcC"
+		else
+			disable menuItem "calcC"
+		end if
+		if vIsValidAE[4] then
+			enable menuItem "calcD"
+		else
+			disable menuItem "calcD"
+		end if
+		if vIsValidAE[5] then
+			enable menuItem "calcE"
+		else
+			disable menuItem "calcE"
+		end if
+	end in
+end
+
+to handle adjustShowRasch
+	system LOGICAL svShowRasch
+	in viewer "printPreview"
+		if svShowRasch then
+			check menuItem "toggleShowRasch"
+		else
+			uncheck menuItem "toggleShowRasch"
+		end if
+	end in
+end adjustShowRasch
+
+to handle laesMangeFiler
+	--getFileOnlyList32(<path>,<file attributes>,<sort order>)
+	--chooseDirectoryDlg32(<caption text>,<default path>)
+	--saveAsDlg32(<caption text>,<default file>,<default path>,<filters>,<index>)
+	local STRING vDir,vFilliste,vFilters,outFile,outText,separateChar
+-- Det går å la brukeren velge tabseparert el linjeseparert, men hva er poenget med linjeseparert?
+--	request "Linjeseparert eller tabseparert output?" with "&Linje" or "&Tab"
+--	if It is not "Tab" then
+--		put CRLF into separateChar
+--	else
+		put tab into separateChar
+--	end if
+	system LOGICAL currentFileIsSaved
+	vDir = chooseDirectoryDlg32("Velg katalog å lese filer fra:","")
+	if vDir is NULL then
+		break laesMangeFiler
+	end if
+	vFilliste = getFileOnlyList32((vDir & "\*.*"),"","N")
+	vFilters= "Tekstfil (*.txt),*.txt,Datafil (*.dat),*.dat"
+	outFile = saveAsDlg32("Lagre din datafil som:","Data.txt","",vFilters,1)
+	if outFile is NULL then
+		break laesMangeFiler
+	end if
+	-- öppnar utfil.
+	closeFile outFile
+	get removeFile32(outFile)	
+	get yieldApp()
+	get yieldApp()
+	mmYield
+	createFile outFile	
+	local LONG ctrJ
+	local writeBuffer
+	
+	-- skriver hoved til tabfil.
+	get \
+	("FILNAVN" & tab & \
+	"NAVN" & tab & \
+	"KJØNN" & tab & \
+	"LOGALDER" & tab & \
+	"MERKNADER" & tab & \
+	"OPPGAVESKÅRER" & tab & \
+	"RASCHSKÅRE" & tab & \
+	"STANDARDFEIL" & tab & \
+	"MINESTIMERT" & tab & \
+	"MAKSESTIMERT" & tab & \
+	"ALDERSEKVIVALENT" & tab & \
+	"NEDRE GRENSE KONF.INT." & tab & \
+	"ØVRE GRENSE KONF.INT." & tab & \
+	"MODELLBASERT PERSENTIL" & CRLF) 
+	writeFile It to outFile
+	
+	step ctrJ from 1 to (textlineCount(vFilliste))
+		clear outText
+		--Öppnar filen.
+		send aapneFil "X", (vDir & "\" & (textline ctrJ of vFilliste))
+		--filformat: Rader NYTT FRAAN JAN06: Rad9 är en versionssträng.
+		-- Kalkylerar.
+		send buttonclick "X" to button "Beregn" of page "Start" of self
+		currentFileIsSaved = TRUE
+		-- Skriver till datafilen följande:
+		--Rad 1, filnamn (inte path)
+		put (textline ctrJ of vFilliste & separateChar) after outText
+		--Rad 2. Navn
+		put (text of field "navn" of page "Start" & separateChar) after outText
+		--Rad 3. Kjönn 0=J 1=G 9=ikke [checked of button "gutt" && checked of button "jente"]
+		if checked of button "gutt" of page "Start" is FALSE then
+			if checked of button "jente" of page "Start" is FALSE then
+				put "9" & separateChar after outText
+			else
+				put "0" & separateChar after outText
+			end if
+		else
+			put "1" & separateChar after outText
+		end if
+		--Rad 4. logalder
+		get text of field "alder" of page "Start"
+		if It is NULL then
+			put "0" & separateChar after outText
+		else
+			writeBuffer = ln(yearMonthtoDec(It))
+			-- writeBuffer = FNum(writeBuffer,8,4)
+			format number writeBuffer as ("0" & sysDecimal & "000")
+			put writeBuffer & separateChar after outText
+		end if
+		--Rad 5. Merknad && Merknad2.
+		put (text of field "merknad" of page "Start" && text of field "merknad2" of page "Start") & separateChar after outText 
+		--Rad 6. 50 items (fra felt på beregningsside)
+		put quote & (text of field "INP" of page "Calculate" ) & quote & separateChar after outText 
+		--Rad 7. Rasch-skåre
+		writeBuffer = pMeasure of page "Calculate"
+--		writeBuffer = FNum(writeBuffer,8,4)
+		format number writeBuffer as ("0" & sysDecimal & "000")
+		put writeBuffer & separateChar after outText
+		--Rad 8. SE
+		writeBuffer = pSE of page "Calculate"
+--		writeBuffer = FNum(writeBuffer,8,4)
+		format number writeBuffer as ("0" & sysDecimal & "000")
+		put writeBuffer & separateChar after outText
+		--Rad 9, IsMinEstimated
+		if pIsMinEstimated of page "Calculate" is TRUE then
+			put "1" & separateChar after outText
+		else
+			put "0" & separateChar after outText
+		end if
+		--Rad 10, IsMaxEstimated
+		if pIsMaxEstimated of page "Calculate" is TRUE then
+			put "1" & separateChar after outText
+		else
+			put "0" & separateChar after outText
+		end if
+		--Rad 11, aldersekvivalent i år:måneder
+		put estimateToPresentText(pMeasure of page "Calculate") & separateChar after outText
+		--Rad 12 & 13 nedre og øvre grense for konfidensintervall i aldersekvivalent, blank for missing
+		if isType("REAL",pSE of page "Calculate") is TRUE and \
+		pIsMinEstimated of page "Calculate" is FALSE and \
+		pIsMaxEstimated of page "Calculate" is FALSE then
+			put estimateToPresentText((pMeasure of page "Calculate") - 1.96*(pSE of page "Calculate"))  & separateChar after outText
+			put estimateToPresentText((pMeasure of page "Calculate") + 1.96*(pSE of page "Calculate"))  & separateChar after outText
+		else
+			put separateChar after outText
+			put separateChar after outText
+		end if
+		--14. Modellbasert persentil.
+		if isType("REAL",pAlder of field "alder" of page "Start") then
+			put modellpersentilFraEstimat(pMeasure of page "Calculate"- \
+			ageToMeasure(pAlder of field "alder" of page "Start", \
+			(text of field "param1" of page "Calculate"), \
+			(text of field "param2" of page "Calculate"))) after outText
+		end if
+		--Ny linje.
+		put CRLF after outText
+		--Skriver till fil
+		writeFile outText to outFile
+	end step
+	closeFile outFile
+end laesMangeFiler
+
+to get ageToMeasure REAL theIn,a,b
+	return  (-1*(a/b) + (1/b)*ln(theIn))
+end
+----------------------------------------------------------------------
+Page id 1 ("Start") of Book "C:\Users\psyko\OneDrive\Dokumenter\Grete\Skaaringsprogram 2021 TB115\Motoriske oppgaver i NUBU 4-16 v39.tbk"
+----------------------------------------------------------------------
+to handle enterfield
+	if object of target is "field" then
+		select text of target
+		oldText of target = text of target
+	end if
+	forward
+end enterfield
+
+to handle leavefield
+	if object of target is "field" then
+		if oldText of target <> text of target then
+			--text has changed
+			-- no longer needed: clear text of field "output" of self
+			-- system STRING currentFile
+			system LOGICAL currentFileIsSaved
+			currentFileIsSaved = FALSE
+
+		end if
+	end if
+	forward
+end leavefield
+
+to handle adjustMe
+	local STRING aItemnavn[]
+	aItemnavn = pItemnavn of this book
+	local LONG ctrJ
+	step ctrJ from 1 to 50
+		text of (field ("led" & ctrJ) of self) = aItemnavn[ctrJ]
+	end step
+end adjustMe
+
+----------------------------------------------------------------------
+Button id 433 ("Beregn") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+to handle buttonClick argA
+	--argA: "X" när 
+	local WORD minValidItems
+	minValidItems = 3 -- kan diskuteras
+
+	clear text of field "output" of parent of self
+	local LONG ctrJ,ctrK
+	local LOGICAL vIsValidAE[5]
+	local STRING dataString, nineString
+	nineString = "9999999999999999999999999999999999999999999999999999"
+	ctrK = 0
+	step ctrJ from 1 to 50
+		get ("i" & ctrJ)
+		put char 1 of ((text of field (It) of parent of self) & "9") after \
+		dataString
+		if last char of dataString <> 9 then
+			increment ctrK
+		end if
+		if ctrJ mod 10 = 0 then
+			vIsValidAE[ctrJ/10] = not (ctrK < minValidItems)
+			ctrK = 0
+		end if
+	end step
+	pIsValidAE of self = vIsValidAE
+	conditions
+		when pCalc of self is "A" and (vIsValidAE[1])
+			text of field "INP" of page "Calculate" = chars 1 to 10 of dataString & chars 1 to 40 of nineString
+		when pCalc of self is "B" and (vIsValidAE[2])
+			text of field "INP" of page "Calculate" = chars 1 to 10 of nineString & chars 11 to 20 of dataString & chars 1 to 30 of nineString
+		when pCalc of self is "C" and (vIsValidAE[3])
+			text of field "INP" of page "Calculate" = chars 1 to 20 of nineString & chars 21 to 30 of dataString & chars 1 to 20 of nineString
+		when pCalc of self is "D" and (vIsValidAE[4])
+			text of field "INP" of page "Calculate" = chars 1 to 30 of nineString & chars 31 to 40 of dataString & chars 1 to 10 of nineString
+		when pCalc of self is "E" and (vIsValidAE[5])
+			text of field "INP" of page "Calculate" = chars 1 to 40 of nineString & chars 41 to 50 of dataString
+		else
+			text of field "INP" of page "Calculate" = dataString
+	end conditions
+	text of field "output" of parent of self = "Beregner... vent litt..."
+	send buttonClick to button "Beregn" of page "Calculate"
+	clear text of field "output" of parent of self
+
+	
+	get pResult of page "Calculate"
+	conditions
+		when It = -10001
+			 send hj_error "Kunne ikke beregne samleskåren.  Ingen gyldige data."
+		when It = -10002
+			 send hj_error "Kunne ikke beregne samleskåren.  Beregningen konvergerte ikke etter " & \
+			 (text of field "INI" of page "Calculate") & " iterasjoner."
+		when It = -10000 -- normal term
+			break conditions
+		else -- unexpected
+			 send hj_error "Kunne ikke beregne samleskåren.  Uventet feil i programmet.  Beklager!"
+	end conditions
+	get pNvalid of page "Calculate"
+	if It < minValidItems then
+		send hj_error "Kan ikke beregne samleskåren hvis færre enn " & minValidItems & " er fylt ut."
+	end if
+	send closePrintPreview -- in book script	
+	if argA is "X" then
+		break buttonClick
+	end if
+	in mainWindow
+	--	send setGraph 0 to page "PrintPage1"
+		show viewer "PrintPreview"
+	end in
+end
+
+----------------------------------------------------------------------
+Button id 432 ("Toem") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+to handle buttonClick
+	clear text of field "output" of parent of self
+	clear text of field "navn" of parent of self
+	clear text of field "merknad" of parent of self
+	clear text of field "merknad2" of parent of self
+	clear text of field "fodtdato" of parent of self
+	clear text of field "testdato" of parent of self
+	clear pDate of field "fodtdato" of parent of self
+	clear pDate of field "testdato" of parent of self
+	clear text of field "alder" of parent of self
+	clear pAlder of field "alder" of parent of self
+	checked of button "gutt" of parent of self = FALSE
+	checked of button "jente" of parent of self = FALSE
+	local LONG ctrJ
+	local STRING dataString
+	step ctrJ from 1 to 50
+		get ("i" & ctrJ)
+		text of field (It) of parent of self = NULL
+	end step
+	--sätter defaultvärde i datumfältet.
+	get sysDate
+	format Date It as sysDateFormat
+	text of field "testdato" = It
+	send leaveField to field "testdato" -- this will put the date in seconds as field property.
+	select text of field "navn"
+end
+----------------------------------------------------------------------
+Field id 431 ("led_navn") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+notifyAfter enterPage
+	my fillColor = fillColor of this background
+end
+----------------------------------------------------------------------
+Field id 223 ("alder") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+to handle buttonClick
+	request "Hvis du vil skrive inn alder manuelt må du først slette fødselsdato eller testdato."
+end
+
+to handle enterField
+	pAlder of self = NULL
+	send suggestAge
+	forward
+end
+
+to handle leaveField
+	pAlder of self = NULL
+	if my text is NULL then
+		forward
+		break leaveField
+	end if
+	get yearMonthToDec(my text)
+	if isType("REAL",It) is FALSE then
+		beep 1
+		select my text
+		request "Du må oppgi alder som år:måneder, for eksempel 6:0 eller 14:11. Programmet må ha en alder for å kunne vise resultatene."
+		break to system
+	end if
+	pAlder of self = It
+	forward
+end
+
+----------------------------------------------------------------------
+Field id 221 ("testdato") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+to handle enterField
+	select my text
+	clear my pDate
+	send suggestAge
+	forward
+end
+
+to handle leaveField
+	if my text is NULL then -- ok att vara NULL
+		clear my pDate
+		send suggestAge
+		forward
+		break leaveField
+	end if
+	get validDateSecondsFromNorwegian(my text)
+	if It < 0  --invalid
+		beep 1
+		request "Ugyldig datoformat. Skriv inn dato som DD.MM.ÅÅÅÅ, f. eks. 17.05.2001.  (Programmet kan ikke håndtere datoer før 01.01.1971.)"
+		select my text
+		clear my pDate
+		break to system
+	else -- valid, has returned the date in seconds
+		my pDate = It
+		--this will not work on dates before Jan 1 1970, so:
+		if It >= 0 then
+			format date It as "dd.mm.yyyy" from seconds
+			my text = It
+		end if
+	end if
+	send suggestAge
+	forward
+end
+	
+----------------------------------------------------------------------
+Field id 214 ("fodtdato") of Page id 1 (p. 1)
+----------------------------------------------------------------------
+to handle enterField
+	select my text
+	clear my pDate
+	send suggestAge
+	forward
+end
+
+to handle leaveField
+	if my text is NULL then -- ok att vara NULL
+		clear my pDate
+		send suggestAge
+		forward
+		break leaveField
+	end if
+	get validDateSecondsFromNorwegian(my text)
+	if It < 0  --invalid
+		beep 1
+		request "Ugyldig datoformat. Skriv inn dato som DD.MM.ÅÅÅÅ, f. eks. 17.05.2001.  (Programmet kan ikke håndtere datoer før 01.01.1971.)"
+		select my text
+		clear my pDate
+		break to system
+	else -- valid, has returned the date in seconds
+		my pDate = It
+		--this will not work on dates before Jan 1 1970, so:
+		if It >= 0 then
+			format date It as "dd.mm.yyyy" from seconds
+			my text = It
+		end if
+	end if
+	send suggestAge
+	forward
+end
+	
+----------------------------------------------------------------------
+Page id 0 ("Calculate") of Book "C:\Users\psyko\OneDrive\Dokumenter\Grete\Skaaringsprogram 2021 TB115\Motoriske oppgaver i NUBU 4-16 v39.tbk"
+----------------------------------------------------------------------
+to handle firstIdle
+	if keyState(keyShift) is not DOWN and keyState(keyControl) is not DOWN then
+		go to page "Start"
+	end if
+	forward
+end
+
+to get raschMeasureFromItems \
+STRING responseString, \
+STRING keyString, \
+WORD nofItems, \
+WORD nofCats, \
+STACK aItemDifficulties, \
+STACK aCatDifficulties, \
+DWORD maxIterations, \
+REAL convergence
+
+
+	-- ==============================================================================
+	-- If successful will put measure and SE, number of valid items, whether
+	-- maximum or minimum estimated,
+	-- as page properties in addition to in return text.
+	-- pMeasure of self (i.e.,page)
+	-- pSE of self
+	-- pNValid of self
+	-- pIsMinEstimated
+	-- pIsMaxEstimated
+	-- ==============================================================================
+	-- Return codes other than an expected ability estimate.
+	-- -10000 dummy return statement, has reached end of program without 
+	--        expected result
+	-- -10001 no valid completed items by this person
+	-- -10002 reached maxIterations without convergence
+
+	-- ==============================================================================
+	-- This program has several limitations, which include:
+
+	-- All categories must be 1 character wide
+	-- Response categories are assigned values of 0, 1 ... (nofCats-1) in order of
+	--   presentation in keyString
+	-- Assumes all item and cat difficulties are given in logits
+	
+	-- ==============================================================================
+
+	-- Input handling
+
+	-- nulls page properties for results
+	clear pMeasure of self
+	clear pSE of self
+	clear pNValid of self
+	clear pIsMinEstimated of self
+	clear pIsMaxEstimated of self
+
+	-- Converts item and category difficulty calibrations to arrays
+	local REAL itemDifficulties[]
+	local LOGICAL thisItemCompleted[]
+	local LONG ctrJ
+	itemDifficulties[nofItems]=0 -- gets dimension of array right
+	thisItemCompleted[nofItems]=FALSE -- gets dimension of array right
+	step ctrJ from 1 to nofItems
+		itemDifficulties[ctrJ] = item ctrJ of aItemDifficulties
+	end step
+	local REAL catDifficulties[]
+	catDifficulties[nofCats]=0 -- gets dimension of array right
+	step ctrJ from 1 to nofCats
+		catDifficulties[ctrJ] = item ctrJ of aCatDifficulties
+	end step
+	
+	-- Sets defaults if not given
+	-- maxIterations set to 500 if 0
+	if maxIterations is 0 then
+		maxIterations = 500
+	end if
+	
+	-- keyString can be empty, 0, 1 ... (nofCats-1) then assumed
+	if keyString is "" then
+		nofCats = chars 1 to (nofCats) of "0123456789abcdefghijklmnopqrstuvwxyz"
+	end if
+
+	-- ==============================================================================
+
+	-- Step 1. Collect responses by person n to the desired
+	-- subset of L calibrated polytomous or dichotomous items.
+	-- Person n has a raw score of R.
+	-- RMin is the minimum possible score on these items,
+	-- RMax the maximum possible.
+
+	-- Step 3.
+	-- The average item difficulty of person n's L items is
+	-- Dmean = (1/L)* Sum[from i=1 to L]of Di
+
+	local WORD nofCompletedItems
+	local REAL rawScore
+	local REAL rMin
+	local REAL rMax
+
+
+	-- figures out the number of completed items
+	local INT thisRawScore
+
+	-- and at the same time calculated mean difficulty for completed items
+	local REAL dMean
+	dMean = 0
+
+	step ctrJ from 1 to nofItems
+		get getNumRawScore((char ctrJ of responseString),keyString,nofCats)
+		if It > -1 then
+			thisItemCompleted[ctrJ] = TRUE
+			increment nofCompletedItems
+			increment rawScore by It
+			dMean = dMean + itemDifficulties[ctrJ]
+		else
+			thisItemCompleted[ctrJ] = FALSE -- should really not be needed but anyway.
+		end if
+	end step
+	pNValid of self = nofCompletedItems
+	if nofCompletedItems = 0 then
+		return -10001 -- this should be the error code for no valid completed items
+	end if
+	rMin = 0
+	rMax = nofCompletedItems*(nofCats-1)
+	dMean = dMean/nofCompletedItems
+	pIsMinEstimated of self = FALSE
+	pIsMaxEstimated of self = FALSE
+
+	if rawScore = rMin then
+		pIsMinEstimated of self = TRUE
+		rawScore = rMin + 0.3
+	end if
+	if rawScore = rMax then
+		pIsMaxEstimated of self = TRUE
+		rawScore = rMax - 0.3
+	end if
+
+	-- ==============================================================================
+
+	-- Step 2. Each item i has a calibration Di and each step j a calibration Fj, in
+	-- user-scaled units. If not already in logits, convert these to logits
+	-- (Here it is assumed that all calibrations are in logits.)
+	
+	-- Step 3 is performed above.
+	
+	-- ==============================================================================
+
+	-- Step 4. The initial estimate of person n's ability can be any finite value.
+	-- Convenient ones are the mean item difficulty, a previous ability estimate, 
+	-- or M=dMean+ln((rawScore-rMin)/(rMax-rawScore))
+	
+	local REAL oldM
+	
+	oldM = dMean+ln((rawScore-rMin)/(rMax-rawScore))
+
+	put CRLF & CRLF after text of field "output" of self
+	put "rawScore      = " & rawScore & CRLF after text of field "output" of self
+	put "dMean         = " & dMean & CRLF after text of field "output" of self
+
+
+	-- ==============================================================================
+
+	-- Step 5. Compute expected score and variance for M. The categories for item i
+	-- of difficulty Di are numbered b, ..., t. Fb=0, and the other Fk are the
+	-- Rasch-Andrich step thresholds. The denominator is the sum o fhe numerators
+	-- for all categories, so that the sum of the probabilities across all categories
+	-- is 1:
+	
+	local REAL Pnij,enumPnij,denomPnij,partDenomPnij
+	local REAL expectedScore,expectedScoreVariance,expectedScoreVariance1,expectedScoreVariance2
+	local LONG ctrI,ctrH,ctrK,ctrIteration
+	ctrIteration = 0
+	do
+		increment ctrIteration
+		expectedScore = 0
+		expectedScoreVariance = 0
+		
+		--För koll.
+		put CRLF & "---- ITERATION " & ctrIteration & " ----" & CRLF after text of field "output" of self
+		text of field "underway" of self = ("ITERATION " & ctrIteration)
+		
+		
+		step ctrI from 1 to nofItems
+			--skips if item not completed
+			if thisItemCompleted[ctrI] = FALSE then
+				continue step ctrI
+			end if
+			denomPnij = 0
+			step ctrH from 1 to nofCats
+				partDenomPnij = 0
+				step ctrK from 1 to ctrH
+					partDenomPnij=partDenomPnij+catDifficulties[ctrK]
+				end step
+				denomPnij=denomPnij+(exp((ctrH-1)*(oldM-itemDifficulties[ctrI])-partDenomPnij))
+			end step
+	
+--			-- För koll.
+--			put CRLF & "Var " & ctrI & ": denomPnij= " & denomPnij & CRLF after text of field "output" of self
+			expectedScoreVariance1 = 0
+			expectedScoreVariance2 = 0
+			step ctrJ from 1 to nofCats
+				enumPnij = 0
+				step ctrK from 1 to ctrJ
+					enumPnij=enumPnij+catDifficulties[ctrK]
+				end step
+				enumPnij=exp((ctrJ-1)*(oldM-itemDifficulties[ctrI])-enumPnij)
+				Pnij=enumPnij/denomPnij
+	
+--				-- För koll.
+--				put CRLF & "Cat " & ctrJ & ":" & CRLF after text of field "output" of self
+--				put "enumPnij = " & enumPnij & CRLF after text of field "output" of self
+--				put "Pnij     = " & Pnij & CRLF after text of field "output" of self
+
+				expectedScore = expectedScore + ((ctrJ-1)*Pnij)
+				expectedScoreVariance1=expectedScoreVariance1+\
+				((ctrJ-1)^2*Pnij)
+				expectedScoreVariance2=expectedScoreVariance2+\
+				((ctrJ-1)*Pnij)
+			end step
+			expectedScoreVariance=expectedScoreVariance+\
+			(expectedScoreVariance1-expectedScoreVariance2^2)
+		end step
+		
+		-- för koll.
+		put CRLF & CRLF after text of field "output" of self
+		put "oldM          = " & oldM & CRLF after text of field "output" of self
+		put "expectedScore = " & expectedScore & CRLF after text of field "output" of self
+		put "variance      = " & expectedScoreVariance & CRLF after text of field "output" of self
+		
+	
+		step ctrI from 1 to nofItems
+			--skips if item not completed
+			if thisItemCompleted[ctrI] = FALSE then
+				continue step ctrI
+			end if
+			step ctrJ from 1 to nofCats
+			end step
+		end step		
+	
+		-- ==============================================================================
+	
+		-- Step 6. Obtain a better estimate M' of the measure M:
+		
+		newM = oldM+ (rawScore - expectedScore)/expectedScoreVariance
+		if abs(newM-oldM)<convergence then
+			break do
+		end if
+		if ctrIteration >= maxIterations then
+			return -10002 -- reached max iterations w/o convergence
+		end if
+		oldM = max(min((oldM+1),newM),(oldM-1))
+	until FALSE -- false do-statement
+	
+	--This is the final result.
+	local STRING beforeOutput
+	put CRLF & CRLF after beforeOutput
+	put "========== FINAL PERSON ESTIMATE ===========" & CRLF after beforeOutput
+	put "Rasch Ability Estimate = " & newM & CRLF after beforeOutput
+	put "Standard Error         = " & 1/((expectedScoreVariance)^.5) & CRLF after beforeOutput
+	put beforeOutput & CRLF & CRLF before text of field "output" of self		
+
+--	local STRING hj_numberFormat
+--	hj_numberFormat = "0" & sysDecimal & "00"
+--	get newM
+--	format number It as hj_numberFormat
+--	pMeasure of self = It
+--	get (1/((expectedScoreVariance)^.5))
+--	format number It as hj_numberFormat
+--	pSE of self = It
+
+	pMeasure of self = newM
+	pSE of self = (1/((expectedScoreVariance)^.5))
+
+	return -10000 -- dummy return statement, has reached end of program without 
+	--expected result
+end raschMeasureFromItems
+
+to get getNumRawScore STRING inChar, STRING inString, WORD nofCats
+	local LONG ctrJ
+	step ctrJ from 1 to nofCats
+		if (inChar) is (char ctrJ of inString) then
+			return (ctrJ - 1)
+		end if
+	end step
+	return -1
+end getNumRawScore
+
+
+----------------------------------------------------------------------
+Button id 12 ("Beregn") of Page id 0 (p. 2)
+----------------------------------------------------------------------
+--to get raschMeasureFromItems \
+--STRING responseString, \
+--STRING keyString, \
+--WORD nofItems, \
+--WORD nofCats, \
+--STACK aItemDifficulties, \
+--STACK aCatDifficulties, \
+--DWORD maxIterations, \
+--REAL convergence
+
+to handle buttonClick
+	text of field "Output" of parent of self = NULL
+	get raschMeasureFromItems \
+	((text of field "INP" of parent of self), \
+	text of field "ING" of parent of self, \
+	text of field "INA" of parent of self, \
+	charCount(text of field "ING" of parent of self), \
+	text of field "INI" of parent of self, \
+	text of field "INK" of parent of self, \
+	text of field "INR" of parent of self, \
+	text of field "INC" of parent of self)
+	pResult of parent of self = It
+	put CRLF & CRLF & "Result= " & It after text of field "Output" of parent of self
+	if It = -10000 then -- normal
+		text of field "underway" of parent of self = "Normal termination."
+	else
+		text of field "underway" of parent of self = "Result= " & It
+	end if
+
+end
+
+
+----------------------------------------------------------------------
+Page id 2 ("PrintPage1") of Book "C:\Users\psyko\OneDrive\Dokumenter\Grete\Skaaringsprogram 2021 TB115\Motoriske oppgaver i NUBU 4-16 v39.tbk"
+----------------------------------------------------------------------
+to handle enterPage
+	send toggleCalcAE -- to book
+	send adjustShowRasch -- to book
+	send setGraph 0 to self
+	forward
+end
+
+to handle setGraph INT redrawAll
+	local REAL minage, maxage, minMeasure, maxMeasure, a, b
+	local LONG maxPU, minPU, leftPU, rightPU
+	local LONG promptoffset -- avståndet mellan v o h linje och text utanför
+	local STRING aItemnavn[]
+	aItemnavn = pItemnavn of parent of parent of self --(i.e., book)
+	local LOGICAL showRaschMeasure
+	system LOGICAL svShowRasch
+
+	if sysLevel is "Reader" then
+		showRaschMeasure = svShowRasch
+	else
+		showRaschMeasure = TRUE
+	end if
+	promptoffset = 100
+--	local WORD minAcceptNofItems
+--	minAcceptNofItems = 3
+	get vertices of rectangle "Graph1" of self
+	-- where the first two numbers specify the x,y coordinates
+	-- of the upper-left corner of the bounding rectangle, and 
+	-- the last two numbers specify the x,y coordinates of the
+	-- lower-right corner.
+	maxPU = item 2 of It
+	minPU = item 4 of It
+	leftPU = item 1 of It
+	rightPU = item 3 of It
+	get vertices of rectangle "TextAlignField" of self
+	maxPT = item 2 of It
+	minPT = item 4 of It
+	leftPT = item 1 of It
+	rightPT = item 3 of It
+	
+	minage = text of field "minest" of page "Calculate" 
+	maxage = text of field "maxest" of page "Calculate" 
+	a = text of field "param1" of page "Calculate" 
+	b = text of field "param2" of page "Calculate" 
+	minMeasure = ageToMeasure(minage,a,b)
+	maxMeasure = ageToMeasure(maxage,a,b)
+	if redrawAll <> 0 then
+		-- Sätter texter till prompter.
+		-- Ålder till vänster.
+		local STACK ageLines,agePrompts
+		ageLines = "3.5,4.0,4.5,5.0,5.5,6,7,8,9,10,12,14,16,18"
+		agePrompts = "3:6,4:0,4:6,5:0,5:6,6:0,7:0,8:0,9:0,10:0,12:0,14:0,16:0,18:0"
+		step ctrJ from 1 to 50
+			text of field ("item_" & ctrJ) of self  = aItemnavn[ctrJ]
+			get "0,0"
+			item 1 of It = (((truncate((ctrJ-.5)/10))*0.2*(rightPT-leftPT)+leftPT))
+			item 2 of It = YPUFromMeasure((item (ctrJ) of text of field "INI" of page "Calculate"), \
+			minMeasure, maxMeasure, maxPT, minPT) - (height of field ("item_" & ctrJ))/2
+			position of field ("item_" & ctrJ) of self = It
+		end step
+		local LONG ctrJ
+		step ctrJ from 1 to itemCount(ageLines)
+			if (item ctrJ of ageLines) >= minage and (item ctrJ of ageLines) <= maxage then
+				show line ("ageline" & ctrJ) of self
+				show field ("ageprompt" & ctrJ) of self
+				get "0,0,0,0"
+				item 1 of It = leftPU
+				item 3 of It = rightPU
+				item 2 of It = YPUFromMeasure (ageToMeasure(item ctrJ of ageLines,a,b), minMeasure, maxMeasure, maxPU, minPU)
+				item 4 of It = item 2 of It
+				vertices of line ("ageline" & ctrJ) of self = It
+				get "0,0"
+				item 1 of It = (leftPU - width of field ("ageprompt" & ctrJ) of self - promptoffset) 
+				item 2 of It = (YPUFromMeasure (ageToMeasure(item ctrJ of ageLines,a,b), minMeasure, maxMeasure, maxPU, minPU) \
+				 - (height of field ("ageprompt" & ctrJ) of self)/2)
+				position of field ("ageprompt" & ctrJ) of self = It
+				text of field ("ageprompt" & ctrJ) of self = item ctrJ of agePrompts
+			else
+				hide line ("ageline" & ctrJ) of self
+				hide field ("ageprompt" & ctrJ) of self
+			end if
+		end step
+		ageLines = "-4.0,-3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0"
+		step ctrJ from 1 to itemCount(ageLines)
+			if (item ctrJ of ageLines) >= minMeasure and (item ctrJ of ageLines) <= maxMeasure then
+	--			show line ("ageline" & ctrJ) of self
+				show field ("measureprompt" & ctrJ) of self
+	--			get "0,0,0,0"
+	--			item 1 of It = leftPU
+	--			item 3 of It = rightPU
+	--			item 2 of It = YPUFromMeasure (ageToMeasure(item ctrJ of ageLines,a,b), minMeasure, maxMeasure, maxPU, minPU)
+	--			item 4 of It = item 2 of It
+	--			vertices of line ("ageline" & ctrJ) of self = It
+				get "0,0"
+				item 1 of It = (rightPU) 
+				item 2 of It = (YPUFromMeasure (item ctrJ of ageLines, minMeasure, maxMeasure, maxPU, minPU))
+				position of line ("measureTick" & ctrJ) of self = It
+				item 1 of It = (rightPU + item 1 of size of line ("measureTick" & ctrJ) of self)  -- inte promptoffset för de är högerjusterade
+				item 2 of It = item 2 of It - (height of field ("measureprompt" & ctrJ) of self)/2
+				position of field ("measureprompt" & ctrJ) of self = It
+				text of field ("measureprompt" & ctrJ) of self = item ctrJ of ageLines
+			else
+	--			hide line ("ageline" & ctrJ) of self
+				hide field ("measureprompt" & ctrJ) of self
+			end if
+		end step
+	end if
+	-- hides or shows measure prompts, labels and lines depending on (showRaschMeasure)
+	ageLines = "-4.0,-3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0"
+	if showRaschMeasure then
+		step ctrJ from 1 to itemCount(ageLines)
+			if (item ctrJ of ageLines) >= minMeasure and (item ctrJ of ageLines) <= maxMeasure then
+				show field ("measureprompt" & ctrJ) of self
+				show line ("measureTick" & ctrJ) of self
+--			else
+--				hide field ("measureprompt" & ctrJ) of self
+--				hide line ("measureTick" & ctrJ) of self
+			end if
+		end step
+		show field "measureprompt_" of self
+	else
+		step ctrJ from 1 to itemCount(ageLines)
+			hide field ("measureprompt" & ctrJ) of self
+			hide line ("measureTick" & ctrJ) of self
+		end step
+		hide field "measureprompt_" of self
+	end if
+	-- info fields
+	get "navn,fodtdato,testdato,alder,merknad,merknad2"
+	step ctrJ from 1 to itemCount(It)
+		text of field (item ctrJ of It) of self = \
+		text of field (item ctrJ of It) of page "Start"
+	end step
+	if (checked of button "gutt" of page "Start") then
+		text of field "led_kjonn" of self = "Kjønn:	Gutt"
+	else
+		if (checked of button "jente" of page "Start") then
+			text of field "led_kjonn" of self = "Kjønn:	Jente"
+		else
+			text of field "led_kjonn" of self = ""
+		end if
+	end if
+--	checked of button "gutt" of self = checked of button "gutt" of page "Start"	
+--	checked of button "jente" of self = checked of button "jente" of page "Start"	
+
+	-- estimate line
+	if isType("REAL",pMeasure of page "Calculate") is TRUE then
+		get "0,0,0,0"
+		item 1 of It = leftPU
+		item 3 of It = rightPT -- was rightPU plus nothing, then rightPT+400
+		item 2 of It = YPUFromMeasure (pMeasure of page "Calculate", minMeasure, maxMeasure, maxPU, minPU)
+		item 4 of It = item 2 of It
+		vertices of line "estimateline" of self = It
+		show line "estimateline" of self
+	else
+		hide line "estimateline" of self
+	end if
+	-- confidence interval rectangle
+	if isType("REAL",pSE of page "Calculate") is TRUE and \
+	pIsMinEstimated of page "Calculate" is FALSE and \
+	pIsMaxEstimated of page "Calculate" is FALSE then
+		get "0,0,0,0"
+		item 1 of It = leftPU
+		item 3 of It = rightPU
+		item 2 of It = YPUFromMeasure (((pMeasure of page "Calculate")+(1.96*(pSE of page "Calculate"))), minMeasure, maxMeasure, maxPU, minPU)
+		item 4 of It = YPUFromMeasure (((pMeasure of page "Calculate")-(1.96*(pSE of page "Calculate"))), minMeasure, maxMeasure, maxPU, minPU)
+		vertices of rectangle "CI" of self = It
+		show rectangle "CI" of self
+	else
+		hide rectangle "CI" of self
+		end if
+
+	-- pSE of self
+	-- pNValid of self
+	-- pIsMinEstimated
+	-- pIsMaxEstimated
+	
+	-- hit kan man bare komme om -10000 og N > maxitems.
+	
+	-- itemfelt
+	local STRING svarsitem
+	svarsitem = text of field "INP" of page "Calculate"
+	step ctrJ from 1 to 50
+		if char ctrJ of svarsitem is not in "012" then
+			text of field ("item_" & ctrJ) = aItemnavn[ctrJ]
+			strokecolor of field ("item_" & ctrJ) = lightGray
+		else
+			text of field ("item_" & ctrJ) of self = aItemnavn[ctrJ] && "(" & char ctrJ of svarsitem & ")"
+			strokecolor of field ("item_" & ctrJ) of self = black
+			fontStyle of last word of text of field ("item_" & ctrJ) of self = bold
+		end if
+		
+	end step
+
+	
+	-- tekster
+	get estimateToPresentText(pMeasure of page "Calculate")
+--	format number It as "#####.00"
+	clear text of field "output" of self
+	local STRING vCalc
+	vCalc = pCalc of button "Beregn" of page "Start"
+	conditions
+		when vCalc = "A"
+			put "================ Beregnet bare ut fra A-oppgaver ================" & CRLF & CRLF\
+			after text of field "output" of self
+		when vCalc = "B"
+			put "================ Beregnet bare ut fra B-oppgaver ================" & CRLF & CRLF\
+			after text of field "output" of self
+		when vCalc = "C"
+			put "================ Beregnet bare ut fra C-oppgaver ================" & CRLF & CRLF\
+			after text of field "output" of self
+		when vCalc = "D"
+			put "================ Beregnet bare ut fra D-oppgaver ================" & CRLF & CRLF\
+			after text of field "output" of self
+		when vCalc = "E"
+			put "================ Beregnet bare ut fra E-oppgaver ================" & CRLF & CRLF\
+			after text of field "output" of self
+		else
+			put "=================================================================" & CRLF \
+			after text of field "output" of self
+	end conditions
+	put ("Samleskåre (Aldersekvivalent):   " & It & CRLF & CRLF) \
+	after text of field "output" of self
+
+	if isType("REAL",pSE of page "Calculate") is TRUE and \
+	pIsMinEstimated of page "Calculate" is FALSE and \
+	pIsMaxEstimated of page "Calculate" is FALSE then
+		get estimateToPresentText((pMeasure of page "Calculate") - 1.96*(pSE of page "Calculate"))
+		put ("95% konfidensintervall fra:      " & It & CRLF) \
+		after text of field "output" of self
+	
+		get estimateToPresentText((pMeasure of page "Calculate") + 1.96*(pSE of page "Calculate"))
+		put ("                       til:      " & It & CRLF & CRLF) \
+		after text of field "output" of self
+
+	else
+		conditions
+			when pIsMinEstimated of page "Calculate" is TRUE
+				put "Alle oppgaver er skåret 0. Konfidensintervall kan ikke beregnes." & \
+				CRLF & CRLF after text of field "output" of self
+			when pIsMaxEstimated of page "Calculate" is TRUE
+				put "Alle oppgaver er skåret 2. Konfidensintervall kan ikke beregnes." & \
+				CRLF & CRLF after text of field "output" of self
+			else
+				put "Konfidensintervall kan ikke beregnes." & \
+				CRLF & CRLF after text of field "output" of self
+		end conditions
+	end if
+	
+	if isType("REAL",pAlder of field "alder" of page "Start") then
+		put ("Skåren tilsvarer " & \
+		modellpersentilFraEstimat(pMeasure of page "Calculate"- \
+		ageToMeasure(pAlder of field "alder" of page "Start",a,b)) \
+		& ". persentilen av barn på alderen " & text of field "alder" of page "Start" & " basert på" & \
+		CRLF & "den statistiske modellen." & \
+		CRLF & CRLF) after text of field "output" of self
+--foer koll
+--put "Raschmål fra alder: " & ageToMeasure(pAlder of field "alder" of page "Start",a,b)
+	else
+		put ("Persentil basert på statistisk modell kan ikke beregnes." & CRLF & CRLF) \
+		after text of field "output" of self
+	end if
+	put "=================================================================" & \
+	aldersgruppepersentilerFraEstimat(pMeasure of page "Calculate") \
+	after text of field "output" of self
+	if showRaschMeasure then
+		-- Raschskåre -- hvis nødvendig?  Kan også sløyfe Raschmålene t h om diagrammet.
+		put "=================================================================" & CRLF \
+		after text of field "output" of self
+		get (pMeasure of page "Calculate")
+		format number It as "#0.00"
+		put   ( "Samleskåre (Rasch-skåre)  :     " & It & CRLF) \
+		after text of field "output" of self
+		if isType("REAL",pSE of page "Calculate") is TRUE and \
+		pIsMinEstimated of page "Calculate" is FALSE and \
+		pIsMaxEstimated of page "Calculate" is FALSE then
+			get pSE of page "Calculate"
+			format number It as "#0.00"
+			put ("Standardfeil              :     " & It & CRLF) \
+			after text of field "output" of self
+		else
+			put "Standardfeil for skåren kan ikke beregnes." & \
+			CRLF after text of field "output" of self
+		end if
+	end if -- if showRaschMeasure
+	put "=================================================================" & CRLF \
+	after text of field "output" of self
+end setGraph
+
+-- konverteringsfunktioner
+to get YPUFromMeasure REAL theIn, minMeasure, maxMeasure, maxPU, minPU
+	-- theIn sätts till max och min.
+	theIn=min(maxMeasure,max(minMeasure,theIn))	
+	-- leverer koordinat.
+	local LONG output
+	output = minPU+((theIn-minMeasure)/(maxMeasure-minMeasure))*(maxPU-minPU)
+	return output
+end
+
+11 objects with script, 1757 script lines
