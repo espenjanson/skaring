@@ -17,7 +17,7 @@ Codex har tidigare inventerat ett separat React-gränssnitt och en stor TypeScri
 7. React behålls som utgångspunkt; SVG utvärderas för skalbar rapport och A4-utskrift.
 
 ## Förberedelser före programmering
-**A. Rena styrdokument:** Slutför kravspecifikation v0.3 och dokumentation av Windows-programmet 2021. Acceptera eller avvisa spårade ändringar i kopior, ta bort motsägande äldre instruktioner, rätta versionsnummer/sidfot och märk frågor som ännu inte är beslutade. Ändra inte originalen utan projektägarens kontroll.
+**A. Rena styrdokument:** Slutför kravspecifikation v0.4 och dokumentation av Windows-programmet 2021. Acceptera eller avvisa spårade ändringar i kopior, ta bort motsägande äldre instruktioner, rätta versionsnummer/sidfot och märk frågor som ännu inte är beslutade. Ändra inte originalen utan projektägarens kontroll.
 
 **B. Referenstestregister:** Inventera den nya ZIP-filen, dess Excel-lista, `_100`-filer, PDF-rapporter och skärmbilder. Koppla varje testnummer till indata och förväntade resultat. Prioritera datum- och åldersfallen **302, 303 och 304**, samt gränsfall för konfidensintervall, områdesval och Rasch. Skilj beräkningsvärden från layoutavvikelser och äldre Windows-utskriftsfel.
 
@@ -45,7 +45,7 @@ Granska utan filändringar hur den befintliga TypeScript-koden representerar och
 
 ## Beslut och frågor som återstår
 - Exakta datumvalideringsgränser och hur ogiltiga datum presenteras för användaren.
-- Vilka ålderskonverteringskonstanter och avrundningsregler i 2021-koden som ska bevaras exakt.
+- 
 - Filåtkomst i olika webbläsare och offlinepaketering.
 - Placering av områdes- och Rasch-kontroller, samt rapportvy kontra nytt fönster.
 - När den stora TypeScript-klassen bör delas upp i moduler.
