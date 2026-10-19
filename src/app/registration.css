@@ -1,0 +1,44 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; color: #000; font-family: Arial, sans-serif; font-size: 12px; }
+.registration-window { width: 641px; max-width: 100%; background: #f0f0f0; min-height: 587px; }
+.window-caption { background: #e8f3f8; padding: 9px 12px; }
+.registration-content { padding: 22px 24px 12px 48px; }
+h1 { font-size: 23px; font-weight: 700; margin: 0 0 36px 10px; white-space: nowrap; }
+input { font: inherit; color: #000; border: 1px solid #333; border-radius: 0; background: #fff; padding: 1px 3px; min-width: 0; height: 20px; }
+input:focus-visible, button:focus-visible { outline: 2px solid #005ea8; outline-offset: 2px; }
+.person-fields { margin-right: 32px; }
+.person-fields input:not([type="radio"]) { font-size: 14px; }
+.wide-field { display: flex; align-items: center; margin-bottom: 4px; }
+.wide-field span { width: 68px; flex-shrink: 0; }
+.wide-field input { width: 100%; }
+.details-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
+.gender { display: flex; align-items: center; border: 0; margin: 0; padding: 0 0 0 68px; position: relative; gap: 10px; flex-shrink: 0; }
+.gender legend { position: absolute; left: 0; top: 50%; transform: translateY(-50%); padding: 0; }
+.gender label { display: flex; align-items: center; gap: 4px; }
+.gender input { margin: 0; width: 12px; height: 12px; }
+.date-field, .age-field { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.date-field input { width: 81px; }
+.age-field input { width: 38px; }
+.age-field { margin-left: auto; }
+.tasks { border: 1px dashed #333; margin: 14px 31px 0 0; padding: 10px 8px 12px; }
+.tasks p { margin: 0 0 17px; font-size: 11px; }
+.task-columns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 0 8px; }
+.task-column { display: flex; flex-direction: column; gap: 4px; }
+.task-field { display: flex; align-items: center; gap: 15px; height: 20px; }
+.task-field span { width: 35px; }
+.task-field input { width: 17px; padding: 0; text-align: center; }
+.form-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 10px; }
+button { font: inherit; min-width: 118px; min-height: 34px; border: 1px solid #aaa; background: #f0f0f0; box-shadow: inset 1px 1px #fff; color: #000; }
+button:disabled { color: #777; }
+.change-status { margin: 10px 0 0; font-size: 11px; }
+.stage-note { line-height: 1.5; font-size: 11px; color: #444; margin: 8px 0 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+@media (max-width: 620px) {
+  .registration-content { padding: 20px 16px; }
+  h1 { white-space: normal; margin-left: 0; font-size: 21px; }
+  .person-fields, .tasks { margin-right: 0; }
+  .details-row { flex-wrap: wrap; gap: 8px 12px; }
+  .task-columns { gap: 8px; padding: 0; }
+  .task-field { gap: 3px; }
+  .task-field span { width: 27px; }
+}
