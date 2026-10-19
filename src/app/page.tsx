@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { Registration, RegistrationFileState, registrationStatus, createRegistration, copyRegistration, registrationsEqual, itemLabels, singleLine, isItemCharacter } from "../domain/registration"
 import "./registration.css"
+import { DateField, dateAge, editRegistrationDate, finishRegistrationDate, finishManualAge, manualAgeError, parseDate } from "../domain/dateAge"
 
 export default function Page() {
   const [data, setData] = useState<Registration | null>(null)
   const [reference, setReference] = useState<Registration | null>(null)
+  const [checked, setChecked] = useState({ birthDate: false, testDate: false, age: false, pair: false })
   // Only a completed file operation may change this lifecycle state in a future stage.
   const [fileState] = useState<RegistrationFileState>({ kind: "new" })
   // Browser initialization avoids server timezone differences.
@@ -24,9 +26,27 @@ export default function Page() {
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
   if (!data) return <main className="registration-window">Laster skjema …</main>
-  function change(field: "name" | "note" | "note2" | "birthDate" | "testDate" | "age", value: string) {
+  function change(field: "name" | "note" | "note2" | "age", value: string) {
     setData(current => current && ({ ...current, [field]: singleLine(value) }))
   }
+  function editDate(field: DateField, text: string) {
+    setData(current => current && editRegistrationDate(current, field, singleLine(text)))
+    setChecked(current => ({ ...current, [field]: false, pair: false }))
+  }
+  function finishDate(field: DateField) {
+    setData(current => current && finishRegistrationDate(current, field))
+    setChecked(current => ({ ...current, [field]: true, pair: true }))
+  }
+  const pair = dateAge(data.birthDate, data.testDate)
+  const birthError = checked.birthDate && parseDate(data.birthDate).kind === "invalid"
+    ? "Ugyldig dato. Bruk dag.måned.år." : null
+  const testError = checked.testDate && parseDate(data.testDate).kind === "invalid"
+    ? "Ugyldig dato. Bruk dag.måned.år."
+    : checked.pair && pair.kind === "reversed" ? "Testdato kan ikke være før født dato." : null
+  const ageError = [
+    checked.pair && pair.kind === "out-of-range" ? "Datoene gir alder utenfor 1:6–99:11." : null,
+    checked.age && data.ageSource === "manual" ? manualAgeError(data.age) : null,
+  ].filter(Boolean).join(" ") || null
   return <main className="registration-window">
     <div className="window-caption">Skåring av motoriske oppgaver i NUBU 4-16 (Ikke lagret)</div>
     <div className="registration-content">
@@ -35,10 +55,13 @@ export default function Page() {
         <div className="person-fields">
           <label className="wide-field"><span>Navn:</span><input value={data.name} onChange={e => change("name", e.target.value)} /></label>
           <div className="details-row">
-            <fieldset className="gender"><legend>Kjønn:</legend>{(["gutt", "jente"] as const).map(gender => <label key={gender}><input type="radio" name="gender" checked={data.gender === gender} onChange={() => setData(current => current && ({ ...current, gender }))} />{gender === "gutt" ? "Gutt" : "Jente"}</label>)}</fieldset>
-            <label className="date-field">Født dato:<input aria-describedby="stage-note" value={data.birthDate} onChange={e => change("birthDate", e.target.value)} /></label>
-            <label className="date-field">Testdato:<input aria-describedby="stage-note" value={data.testDate} onChange={e => change("testDate", e.target.value)} /></label>
-            <label className="age-field">Alder:<input aria-describedby="stage-note" value={data.age} onChange={e => change("age", e.target.value)} /></label>
+            <fieldset className="gender"><legend className="sr-only">Kjønn:</legend><span className="gender-caption" aria-hidden="true">Kjønn:</span>{(["gutt", "jente"] as const).map(gender => <label key={gender}><input type="radio" name="gender" checked={data.gender === gender} onChange={() => setData(current => current && ({ ...current, gender }))} />{gender === "gutt" ? "Gutt" : "Jente"}</label>)}</fieldset>
+            <div className="date-control"><label className="date-field" htmlFor="birth-date">Født dato:<input id="birth-date" aria-invalid={!!birthError} aria-describedby={birthError ? "birth-error" : undefined} value={data.birthDate} onChange={e => editDate("birthDate", e.target.value)} onBlur={() => finishDate("birthDate")} /></label>{birthError && <span id="birth-error" className="field-error" role="status">{birthError}</span>}</div>
+            <div className="date-control"><label className="date-field" htmlFor="test-date">Testdato:<input id="test-date" aria-invalid={!!testError} aria-describedby={testError ? "test-error" : undefined} value={data.testDate} onChange={e => editDate("testDate", e.target.value)} onBlur={() => finishDate("testDate")} /></label>{testError && <span id="test-error" className="field-error" role="status">{testError}</span>}</div>
+            <div className="date-control age-control"><label className="age-field" htmlFor="age">Alder:<input id="age" aria-invalid={!!ageError} aria-describedby={ageError ? "age-error" : data.ageSource === "automatic" ? "automatic-age" : undefined} readOnly={data.ageSource === "automatic"} value={data.age} onChange={e => { change("age", e.target.value); setChecked(current => ({ ...current, age: false })) }} onBlur={() => {
+              setData(current => current && finishManualAge(current))
+              setChecked(current => ({ ...current, age: true }))
+            }} /></label>{ageError && <span id="age-error" className="field-error" role="status">{ageError}</span>}<span id="automatic-age" className="sr-only">Alder beregnes automatisk fra datoene.</span></div>
           </div>
           <label className="wide-field"><span>Merknad:</span><input value={data.note} onChange={e => change("note", e.target.value)} /></label>
           <label className="wide-field"><span>Merknad 2:</span><input value={data.note2} onChange={e => change("note2", e.target.value)} /></label>
@@ -63,10 +86,11 @@ export default function Page() {
           if (dirty && !window.confirm("Tømme alle feltene? Ulagrede endringer går tapt.")) return
           // Clearing is an edit; the original reference remains unchanged.
           setData(createRegistration(new Date()))
+          setChecked({ birthDate: false, testDate: false, age: false, pair: false })
         }}>Tøm formular</button><button type="button" disabled>Vis resultat</button></div>
       </form>
       <p className="change-status" role="status">{reference && registrationStatus(data, reference, fileState)}</p>
-      <p id="stage-note" className="stage-note">Prøveversjon av hovedbildet. Datoformat: DD.MM.ÅÅÅÅ. Alder: Å:M. Dato og alder er foreløpig tekstfelt uten kontroll eller automatisk aldersberegning. Lagring og resultatvisning er ikke tilgjengelig. Innholdet går tapt når siden lukkes.</p>
+      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Lagring og resultatvisning er ikke tilgjengelig. Innholdet går tapt når siden lukkes.</p>
     </div>
   </main>
 }

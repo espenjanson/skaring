@@ -1,0 +1,484 @@
+{
+  "source": "docs/reference-tests/261019 Test av autoaalder.xlsx",
+  "sheet": "Sheet1",
+  "selection": "Yellow highlighted rows, with source comments retained",
+  "cases": [
+    {
+      "row": 2,
+      "birthDate": "01.03.2020",
+      "testDate": "29.08.2021",
+      "elapsedDays": 546,
+      "displayAge": "1:5",
+      "allowed": false,
+      "sourceNote": "Utanför intervallet, ger varning i webbprogrammet, testat OK"
+    },
+    {
+      "row": 3,
+      "birthDate": "01.03.2020",
+      "testDate": "30.08.2021",
+      "elapsedDays": 547,
+      "displayAge": "1:5",
+      "allowed": false,
+      "sourceNote": "Utanför intervallet, ger varning i webbprogrammet, testat OK. Gränsen testad i Win-programmet som ej varnar. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 4,
+      "birthDate": "01.03.2020",
+      "testDate": "31.08.2021",
+      "elapsedDays": 548,
+      "displayAge": "1:6",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 34,
+      "birthDate": "01.03.2020",
+      "testDate": "30.09.2021",
+      "elapsedDays": 578,
+      "displayAge": "1:6",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 35,
+      "birthDate": "01.03.2020",
+      "testDate": "01.10.2021",
+      "elapsedDays": 579,
+      "displayAge": "1:7",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 64,
+      "birthDate": "01.03.2020",
+      "testDate": "30.10.2021",
+      "elapsedDays": 608,
+      "displayAge": "1:7",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 65,
+      "birthDate": "01.03.2020",
+      "testDate": "31.10.2021",
+      "elapsedDays": 609,
+      "displayAge": "1:8",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 95,
+      "birthDate": "01.03.2020",
+      "testDate": "30.11.2021",
+      "elapsedDays": 639,
+      "displayAge": "1:8",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 96,
+      "birthDate": "01.03.2020",
+      "testDate": "01.12.2021",
+      "elapsedDays": 640,
+      "displayAge": "1:9",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 125,
+      "birthDate": "01.03.2020",
+      "testDate": "30.12.2021",
+      "elapsedDays": 669,
+      "displayAge": "1:9",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 126,
+      "birthDate": "01.03.2020",
+      "testDate": "31.12.2021",
+      "elapsedDays": 670,
+      "displayAge": "1:10",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 156,
+      "birthDate": "01.03.2020",
+      "testDate": "30.01.2022",
+      "elapsedDays": 700,
+      "displayAge": "1:10",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 157,
+      "birthDate": "01.03.2020",
+      "testDate": "31.01.2022",
+      "elapsedDays": 701,
+      "displayAge": "1:11",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 186,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2022",
+      "elapsedDays": 730,
+      "displayAge": "1:11",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 187,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2022",
+      "elapsedDays": 731,
+      "displayAge": "2:0",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 216,
+      "birthDate": "01.03.2020",
+      "testDate": "31.03.2022",
+      "elapsedDays": 760,
+      "displayAge": "2:0",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 217,
+      "birthDate": "01.03.2020",
+      "testDate": "01.04.2022",
+      "elapsedDays": 761,
+      "displayAge": "2:1",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 247,
+      "birthDate": "01.03.2020",
+      "testDate": "01.05.2022",
+      "elapsedDays": 791,
+      "displayAge": "2:1",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 248,
+      "birthDate": "01.03.2020",
+      "testDate": "02.05.2022",
+      "elapsedDays": 792,
+      "displayAge": "2:2",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 277,
+      "birthDate": "01.03.2020",
+      "testDate": "31.05.2022",
+      "elapsedDays": 821,
+      "displayAge": "2:2",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 278,
+      "birthDate": "01.03.2020",
+      "testDate": "01.06.2022",
+      "elapsedDays": 822,
+      "displayAge": "2:3",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 307,
+      "birthDate": "01.03.2020",
+      "testDate": "30.06.2022",
+      "elapsedDays": 851,
+      "displayAge": "2:3",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 308,
+      "birthDate": "01.03.2020",
+      "testDate": "01.07.2022",
+      "elapsedDays": 852,
+      "displayAge": "2:3",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 309,
+      "birthDate": "01.03.2020",
+      "testDate": "02.07.2022",
+      "elapsedDays": 853,
+      "displayAge": "2:4",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 338,
+      "birthDate": "01.03.2020",
+      "testDate": "31.07.2022",
+      "elapsedDays": 882,
+      "displayAge": "2:4",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 339,
+      "birthDate": "01.03.2020",
+      "testDate": "01.08.2022",
+      "elapsedDays": 883,
+      "displayAge": "2:5",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 551,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2023",
+      "elapsedDays": 1095,
+      "displayAge": "2:11",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 552,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2023",
+      "elapsedDays": 1096,
+      "displayAge": "3:0",
+      "allowed": true,
+      "sourceNote": "Gränsen testad i Win-programmet. Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 915,
+      "birthDate": "01.03.2020",
+      "testDate": "28.02.2024",
+      "elapsedDays": 1459,
+      "displayAge": "3:11",
+      "allowed": true,
+      "sourceNote": "Ingen skottdag ingår i intervallet."
+    },
+    {
+      "row": 916,
+      "birthDate": "01.03.2020",
+      "testDate": "29.02.2024",
+      "elapsedDays": 1460,
+      "displayAge": "3:11",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 917,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2024",
+      "elapsedDays": 1461,
+      "displayAge": "4:0",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 1282,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2025",
+      "elapsedDays": 1826,
+      "displayAge": "4:11",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 1283,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2025",
+      "elapsedDays": 1827,
+      "displayAge": "5:0",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 1647,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2026",
+      "elapsedDays": 2191,
+      "displayAge": "5:11",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 1648,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2026",
+      "elapsedDays": 2192,
+      "displayAge": "6:0",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 2012,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2027",
+      "elapsedDays": 2556,
+      "displayAge": "6:11",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 2013,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2027",
+      "elapsedDays": 2557,
+      "displayAge": "7:0",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 2376,
+      "birthDate": "01.03.2020",
+      "testDate": "28.02.2028",
+      "elapsedDays": 2920,
+      "displayAge": "7:11",
+      "allowed": true,
+      "sourceNote": "En skottdag ingår i intervallet. "
+    },
+    {
+      "row": 2377,
+      "birthDate": "01.03.2020",
+      "testDate": "29.02.2028",
+      "elapsedDays": 2921,
+      "displayAge": "7:11",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 2378,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2028",
+      "elapsedDays": 2922,
+      "displayAge": "8:0",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3108,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2030",
+      "elapsedDays": 3652,
+      "displayAge": "9:11",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3109,
+      "birthDate": "01.03.2020",
+      "testDate": "02.03.2030",
+      "elapsedDays": 3653,
+      "displayAge": "10:0",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3138,
+      "birthDate": "01.03.2020",
+      "testDate": "31.03.2030",
+      "elapsedDays": 3682,
+      "displayAge": "10:0",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3139,
+      "birthDate": "01.03.2020",
+      "testDate": "01.04.2030",
+      "elapsedDays": 3683,
+      "displayAge": "10:1",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3837,
+      "birthDate": "01.03.2020",
+      "testDate": "28.02.2032",
+      "elapsedDays": 4381,
+      "displayAge": "11:11",
+      "allowed": true,
+      "sourceNote": "Två skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3838,
+      "birthDate": "01.03.2020",
+      "testDate": "29.02.2032",
+      "elapsedDays": 4382,
+      "displayAge": "11:11",
+      "allowed": true,
+      "sourceNote": "Tre skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 3839,
+      "birthDate": "01.03.2020",
+      "testDate": "01.03.2032",
+      "elapsedDays": 4383,
+      "displayAge": "12:0",
+      "allowed": true,
+      "sourceNote": "Tre skottdagar ingår i intervallet. Gränsen testad i Win-programmet."
+    },
+    {
+      "row": 4099,
+      "birthDate": "01.01.1930",
+      "testDate": "29.12.2029",
+      "elapsedDays": 36522,
+      "displayAge": "99:11",
+      "allowed": true,
+      "sourceNote": "Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    },
+    {
+      "row": 4100,
+      "birthDate": "01.01.1930",
+      "testDate": "30.12.2029",
+      "elapsedDays": 36523,
+      "displayAge": "99:11",
+      "allowed": true,
+      "sourceNote": "Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    },
+    {
+      "row": 4101,
+      "birthDate": "01.01.1930",
+      "testDate": "31.12.2029",
+      "elapsedDays": 36524,
+      "displayAge": "99:11",
+      "allowed": true,
+      "sourceNote": "Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    },
+    {
+      "row": 4102,
+      "birthDate": "01.01.1930",
+      "testDate": "01.01.2030",
+      "elapsedDays": 36525,
+      "displayAge": "100:0",
+      "allowed": false,
+      "sourceNote": "Utanför intervallet, ger varning. Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    },
+    {
+      "row": 4103,
+      "birthDate": "01.01.1930",
+      "testDate": "02.01.2030",
+      "elapsedDays": 36526,
+      "displayAge": "100:0",
+      "allowed": false,
+      "sourceNote": "Utanför intervallet, ger varning. Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    },
+    {
+      "row": 4104,
+      "birthDate": "01.01.1930",
+      "testDate": "03.01.2030",
+      "elapsedDays": 36527,
+      "displayAge": "100:0",
+      "allowed": false,
+      "sourceNote": "Utanför intervallet, ger varning. Kan inte testas i Windows-programmet. Gränsen testad i webbprogrammet."
+    }
+  ]
+}

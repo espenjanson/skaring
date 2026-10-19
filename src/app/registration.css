@@ -6,19 +6,24 @@ body { margin: 0; background: #fff; color: #000; font-family: Arial, sans-serif;
 h1 { font-size: 23px; font-weight: 700; margin: 0 0 36px 10px; white-space: nowrap; }
 input { font: inherit; color: #000; border: 1px solid #333; border-radius: 0; background: #fff; padding: 1px 3px; min-width: 0; height: 20px; }
 input:focus-visible, button:focus-visible { outline: 2px solid #005ea8; outline-offset: 2px; }
-.person-fields { margin-right: 32px; }
+.person-fields { margin-right: 32px; line-height: 20px; }
 .person-fields input:not([type="radio"]) { font-size: 14px; }
 .wide-field { display: flex; align-items: center; margin-bottom: 4px; }
 .wide-field span { width: 68px; flex-shrink: 0; }
 .wide-field input { width: 100%; }
-.details-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
+.details-row { display: flex; align-items: flex-start; gap: 5px; margin-bottom: 4px; font-size: 12px; }
+.gender { height: 20px; }
+.date-control { position: relative; min-width: 0; flex-shrink: 0; }
+.age-control { margin-left: auto; }
+.field-error { display: block; color: #a31616; font-size: 11px; line-height: 1.3; width: 0; min-width: 100%; overflow-wrap: anywhere; margin-top: 3px; }
+.person-fields input[readonly] { background: #dedede; }
 .gender { display: flex; align-items: center; border: 0; margin: 0; padding: 0 0 0 68px; position: relative; gap: 10px; flex-shrink: 0; }
-.gender legend { position: absolute; left: 0; top: 50%; transform: translateY(-50%); padding: 0; }
+.gender-caption { position: absolute; left: 0; top: 0; height: 20px; display: flex; align-items: center; }
 .gender label { display: flex; align-items: center; gap: 4px; }
 .gender input { margin: 0; width: 12px; height: 12px; }
 .date-field, .age-field { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .date-field input { width: 81px; }
-.age-field input { width: 38px; }
+.age-field input { width: 46px; }
 .age-field { margin-left: auto; }
 .tasks { border: 1px dashed #333; margin: 14px 31px 0 0; padding: 10px 8px 12px; }
 .tasks p { margin: 0 0 17px; font-size: 11px; }
