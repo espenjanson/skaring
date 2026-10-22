@@ -15,13 +15,18 @@ export interface Registration {
 /** File lifecycle metadata is separate from editable data and the reference copy. */
 export type RegistrationFileState = { kind: "new" } | { kind: "saved" }
 
+export type RegistrationStatus =
+  | "Ingen ulagrede endringer"
+  | "Ulagrede endringer"
+  | "Endringer lagret"
+
 export function registrationStatus(
   data: Registration,
   reference: Registration,
   fileState: RegistrationFileState,
-): string {
+): RegistrationStatus {
   if (!registrationsEqual(data, reference)) return "Ulagrede endringer"
-  return fileState.kind === "saved" ? "Alle endringer lagret" : "Ingen ulagrede endringer"
+  return fileState.kind === "saved" ? "Endringer lagret" : "Ingen ulagrede endringer"
 }
 export const itemLabels: readonly string[] = Array.from({ length: 50 }, (_, i) => `${"ABCDE"[Math.floor(i / 10)]}${i % 10 + 1}`)
 /** Use the local calendar date rather than UTC. */

@@ -14,7 +14,7 @@ test('status uses content comparison and file lifecycle independently', () => {
   const data = createRegistration(new Date(2026, 9, 19))
   const reference = copyRegistration(data)
   assert.equal(registrationStatus(data, reference, { kind: 'new' }), 'Ingen ulagrede endringer')
-  assert.equal(registrationStatus(data, reference, { kind: 'saved' }), 'Alle endringer lagret')
+  assert.equal(registrationStatus(data, reference, { kind: 'saved' }), 'Endringer lagret')
   const changed = { ...data, note: 'changed' }
   for (const kind of ['new', 'saved']) {
     assert.equal(registrationStatus(changed, reference, { kind }), 'Ulagrede endringer')
