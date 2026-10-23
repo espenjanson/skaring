@@ -15,15 +15,15 @@ import type {
 import { resolveSaveValidation, validateForSave } from "./saveValidation";
 import type { Nubu100Error, Nubu100Record } from "../file/nubu100";
 import { parseNubu100, serializeNubu100 } from "../file/nubu100";
-import { defaultFileName } from "../file/fileName";
+import { defaultFileName, fileNameError } from "../file/fileName";
 
+/** The most recently accepted opened file, never a requested download name or handle. */
 export type FileAssociation = Readonly<{ fileName: string }> | null;
-export type SaveMode = "save" | "save-as";
 type NextAction = "open" | "new";
 
 interface SaveContext {
   readonly revision: number;
-  readonly mode: SaveMode;
+  readonly suggestedName: string;
   readonly next: NextAction | null;
 }
 
@@ -77,6 +77,8 @@ export interface FileWorkflowSnapshot {
   readonly current: SaveCandidate;
   readonly reference: SaveCandidate;
   readonly association: FileAssociation;
+  // Reset by accepted Open/New, preserved by ordinary edits and clear-form.
+  readonly downloadInitiated: boolean;
   readonly status: RegistrationStatus;
   readonly phase: FileWorkflowPhase;
 }
@@ -110,17 +112,14 @@ function documentState(
   current: Registration,
   reference: Registration,
   association: FileAssociation,
+  downloadInitiated = false,
 ) {
   return Object.freeze({
     current: snapshot(current),
     reference: snapshot(reference),
     association,
+    downloadInitiated,
   });
-}
-
-function validFileName(name: string): boolean {
-  // Never silently rewrite a chosen name or append an extension.
-  return name.trim() !== "" && !/[\\/\u0000-\u001f\u007f]/.test(name);
 }
 
 /**
@@ -141,7 +140,7 @@ export class FileWorkflow {
 
   /** Returned data is frozen; byte buffers are copies, never the stored save payload. */
   getSnapshot(): FileWorkflowSnapshot {
-    const { current, reference, association } = this.document;
+    const { current, reference, association, downloadInitiated } = this.document;
     const phase =
       this.phase.kind === "file-name" || this.phase.kind === "download"
         ? Object.freeze({ ...this.phase, bytes: this.phase.bytes.slice() })
@@ -150,8 +149,9 @@ export class FileWorkflow {
       current,
       reference,
       association,
+      downloadInitiated,
       status: registrationStatus(current, reference, {
-        kind: association ? "saved" : "new",
+        kind: association || downloadInitiated ? "saved" : "new",
       }),
       phase,
     });
@@ -169,7 +169,7 @@ export class FileWorkflow {
     ) {
       return { kind: "ok" };
     }
-    const updated = documentState(data, reference, association);
+    const updated = documentState(data, reference, association, this.document.downloadInitiated);
     this.document = updated;
     this.revision++;
     if (this.phase.kind !== "download") this.phase = IDLE;
@@ -191,9 +191,9 @@ export class FileWorkflow {
     return this.requestReplacement("new");
   }
 
-  requestSave(mode: SaveMode = "save"): WorkflowOutcome {
+  requestDownload(): WorkflowOutcome {
     if (this.phase.kind !== "idle") return { kind: "busy" };
-    return this.startSave(mode, null);
+    return this.startSave(null);
   }
 
   chooseUnsaved(
@@ -206,7 +206,7 @@ export class FileWorkflow {
     }
     if (choice === "cancel") return this.cancel(token);
     return choice === "save"
-      ? this.startSave("save", phase.next)
+      ? this.startSave(phase.next)
       : this.advance(phase.next, false);
   }
 
@@ -235,7 +235,7 @@ export class FileWorkflow {
       this.phase = IDLE;
       return { kind: "error", code: "format", detail: parsed.error };
     }
-    if (!validFileName(outcome.fileName)) {
+    if (outcome.fileName === "") {
       this.phase = IDLE;
       return { kind: "error", code: "invalid-file-name" };
     }
@@ -284,7 +284,7 @@ export class FileWorkflow {
     if (phase.kind !== "file-name" || phase.token !== token) {
       return { kind: "ignored" };
     }
-    if (!validFileName(fileName)) {
+    if (fileNameError(fileName)) {
       return { kind: "error", code: "invalid-file-name" };
     }
     this.phase = Object.freeze({
@@ -314,11 +314,13 @@ export class FileWorkflow {
     }
     const unchanged = this.revision === phase.context.revision;
     // Do not apply old validation corrections over edits made after serialization.
-    // The saved snapshot remains the reference, so newer content stays visibly dirty.
+    // The downloaded snapshot remains the reference, so newer content stays visibly dirty.
+    // Download history is independent of the name of the last opened file.
     this.document = documentState(
       unchanged ? phase.candidate : this.document.current,
       phase.candidate,
-      Object.freeze({ fileName: phase.fileName }),
+      this.document.association,
+      true,
     );
     this.phase = IDLE;
     const continuation = unchanged ? phase.context.next : null;
@@ -384,8 +386,24 @@ export class FileWorkflow {
     return { kind: "opened" };
   }
 
-  private startSave(mode: SaveMode, next: NextAction | null): WorkflowOutcome {
-    const context = Object.freeze({ mode, next, revision: this.revision });
+  private startSave(next: NextAction | null): WorkflowOutcome {
+    // Check fields that date/age decisions cannot change before asking for corrections.
+    // Date and age text may still be corrected, blanked, or calculated, so only the
+    // final candidate can determine whether those fields can be serialized.
+    const preflight = serializeNubu100({
+      ...this.document.current,
+      birthDate: "",
+      testDate: "",
+      age: "",
+    });
+    if (!preflight.ok) {
+      this.phase = IDLE;
+      return { kind: "error", code: "serialization", detail: preflight.error };
+    }
+    const suggestedName = this.document.association
+      ? this.document.association.fileName
+      : defaultFileName(this.now());
+    const context = Object.freeze({ suggestedName, next, revision: this.revision });
     return this.prepareSave(validateForSave(this.document.current), context);
   }
 
@@ -415,17 +433,13 @@ export class FileWorkflow {
       this.phase = IDLE;
       return { kind: "error", code: "serialization", detail: serialized.error };
     }
-    const suggestedName =
-      context.mode === "save" && this.document.association
-        ? this.document.association.fileName
-        : defaultFileName(this.now());
     this.phase = Object.freeze({
       kind: "file-name",
       token: this.nextToken++,
       context,
       candidate: validation.candidate,
       bytes: serialized.bytes,
-      suggestedName,
+      suggestedName: context.suggestedName,
     });
     return { kind: "ok" };
   }

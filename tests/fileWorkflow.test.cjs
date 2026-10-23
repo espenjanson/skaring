@@ -52,8 +52,8 @@ function open(w, data = bytes(), fileName = 'Barn.~Z4') {
   return result
 }
 
-function prepareDownload(w, { mode = 'save', fileName } = {}) {
-  assert.equal(w.requestSave(mode).kind, 'ok')
+function prepareDownload(w, { fileName } = {}) {
+  assert.equal(w.requestDownload().kind, 'ok')
   const name = phase(w, 'file-name')
   assert.equal(w.chooseFileName(name.token, fileName ?? name.suggestedName).kind, 'ok')
   return phase(w, 'download')
@@ -255,53 +255,68 @@ test('clear-form confirmation preserves metadata and reference and uses ordinary
   assert.equal(w.getSnapshot().status, 'Endringer lagret')
 })
 
-test('save and save-as use the correct name proposals and retain the approved extension verbatim', () => {
+test('repeated downloads without an opened file always propose the current local date', () => {
   let today = new Date(2026, 9, 22)
   const w = new FileWorkflow(() => today)
   edit(w, { testDate: '01.01.2000' })
-  w.requestSave()
+  w.requestDownload()
   assert.equal(phase(w, 'file-name').suggestedName, 'Motorisk test 22.10.26.~Z4')
   w.chooseFileName(phase(w, 'file-name').token, 'Min fil.egen')
   assert.equal(w.getSnapshot().association, null)
   w.receiveDownload(phase(w, 'download').token, 'started')
-  assert.equal(w.getSnapshot().association.fileName, 'Min fil.egen')
+  assert.equal(w.getSnapshot().association, null)
+  assert.equal(w.getSnapshot().downloadInitiated, true)
   today = new Date(2026, 9, 23)
-  w.requestSave()
-  assert.equal(phase(w, 'file-name').suggestedName, 'Min fil.egen')
+  w.requestDownload()
+  assert.equal(phase(w, 'file-name').suggestedName, 'Motorisk test 23.10.26.~Z4')
   w.cancel(phase(w, 'file-name').token)
-  w.requestSave('save-as')
+  w.requestDownload()
   assert.equal(phase(w, 'file-name').suggestedName, 'Motorisk test 23.10.26.~Z4')
   w.chooseFileName(phase(w, 'file-name').token, 'Åse uten endelse')
   w.receiveDownload(phase(w, 'download').token, 'started')
-  assert.equal(w.getSnapshot().association.fileName, 'Åse uten endelse')
+  assert.equal(w.getSnapshot().association, null)
   assert.equal(w.getSnapshot().status, 'Endringer lagret')
 })
 
-test('save uses an opened name while save-as always proposes a fresh dated name', () => {
+test('repeated downloads retain the last opened name regardless of the downloaded name or extension', () => {
   const w = workflow()
   open(w, bytes(), 'Original.ANNET')
-  w.requestSave()
+  w.requestDownload()
   assert.equal(phase(w, 'file-name').suggestedName, 'Original.ANNET')
-  w.cancel(phase(w, 'file-name').token)
-  w.requestSave('save-as')
+  w.chooseFileName(phase(w, 'file-name').token, 'Downloaded without extension')
+  assert.equal(phase(w, 'download').fileName, 'Downloaded without extension')
+  w.receiveDownload(phase(w, 'download').token, 'started')
+  w.requestDownload()
+  assert.equal(phase(w, 'file-name').suggestedName, 'Original.ANNET')
+  assert.equal(w.getSnapshot().association.fileName, 'Original.ANNET')
+})
+
+test('the proposed save date is captured at flow start even if validation crosses midnight', () => {
+  let today = new Date(2026, 9, 22, 23, 59)
+  const w = new FileWorkflow(() => today)
+  edit(w, { birthDate: 'wrong' })
+  w.requestDownload()
+  today = new Date(2026, 9, 23, 0, 1)
+  w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
   assert.equal(phase(w, 'file-name').suggestedName, 'Motorisk test 22.10.26.~Z4')
 })
 
-test('only successful download initiation updates reference and association', () => {
-  for (const mode of ['save', 'save-as']) {
+test('only successful download initiation updates reference and history, never the opened association', () => {
+  for (const opened of [false, true]) {
     for (const outcome of ['started', 'failed', 'cancelled']) {
       const w = workflow()
-      open(w)
+      if (opened) open(w)
       edit(w, { note2: 'edited' })
       const before = content(w)
-      const download = prepareDownload(w, { mode, fileName: 'Chosen.new' })
+      const download = prepareDownload(w, { fileName: 'Chosen.new' })
       assert.deepEqual(content(w), before)
       const result = w.receiveDownload(download.token, outcome)
       if (outcome === 'started') {
         assert.equal(result.kind, 'saved')
         assert.deepEqual(w.getSnapshot().reference, w.getSnapshot().current)
         assert.equal(w.getSnapshot().reference.note2, 'edited')
-        assert.equal(w.getSnapshot().association.fileName, 'Chosen.new')
+        assert.deepEqual(w.getSnapshot().association, before.association)
+        assert.equal(w.getSnapshot().downloadInitiated, true)
         assert.equal(w.getSnapshot().status, 'Endringer lagret')
       } else {
         assert.equal(result.kind, outcome === 'failed' ? 'error' : 'cancelled')
@@ -316,7 +331,7 @@ test('accepted validation blankings stay isolated until a successful initiation'
     const w = workflow()
     edit(w, { birthDate: 'bad birth', testDate: 'bad test', age: 'bad age' })
     const before = content(w)
-    w.requestSave()
+    w.requestDownload()
     for (const field of ['birthDate', 'testDate', 'age']) {
       const pending = phase(w, 'validation')
       assert.equal(pending.validation.problem.field, field)
@@ -342,7 +357,7 @@ test('accepted validation blankings stay isolated until a successful initiation'
 test('validation correction reaches serialized bytes and reference only on success', () => {
   const w = workflow()
   edit(w, { birthDate: 'wrong', testDate: '16.10.2026', age: 'wrong' })
-  w.requestSave()
+  w.requestDownload()
   w.chooseValidation(phase(w, 'validation').token, { kind: 'correct', value: '16.10.22' })
   const name = phase(w, 'file-name')
   assert.equal(w.getSnapshot().current.birthDate, 'wrong')
@@ -360,7 +375,7 @@ test('out-of-range continuation preserves dates and age in serialized content an
   const w = workflow()
   edit(w, { birthDate: '22.10.2026', testDate: '21.10.2026', age: 'not an age' })
   const original = w.getSnapshot().current
-  w.requestSave()
+  w.requestDownload()
   assert.equal(phase(w, 'validation').validation.problem.kind, 'date-pair-out-of-range')
   w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
   const name = phase(w, 'file-name')
@@ -376,7 +391,7 @@ test('validation cancellation, invalid decisions and serialization errors leave 
     const w = workflow()
     edit(w, { birthDate: 'wrong' })
     const before = content(w)
-    w.requestSave()
+    w.requestDownload()
     const result = w.chooseValidation(phase(w, 'validation').token, choice)
     assert.ok(['cancelled', 'error'].includes(result.kind))
     assert.deepEqual(content(w), before)
@@ -385,7 +400,7 @@ test('validation cancellation, invalid decisions and serialization errors leave 
   const w = workflow()
   edit(w, { name: '😀' })
   const before = content(w)
-  const result = w.requestSave()
+  const result = w.requestDownload()
   assert.equal(result.kind, 'error')
   assert.equal(result.code, 'serialization')
   assert.equal(result.detail.field, 'name')
@@ -396,7 +411,7 @@ test('validation cancellation, invalid decisions and serialization errors leave 
 test('invalid file names do not update metadata and the name step can be corrected or cancelled', () => {
   const w = workflow()
   const before = content(w)
-  w.requestSave()
+  w.requestDownload()
   const name = phase(w, 'file-name')
   for (const fileName of ['', ' ', 'a/b', 'a\\b', 'a\nb']) {
     assert.equal(w.chooseFileName(name.token, fileName).kind, 'error')
@@ -410,7 +425,7 @@ test('invalid file names do not update metadata and the name step can be correct
 test('saving an older snapshot preserves newer edits while referencing exactly the serialized version', () => {
   const w = workflow()
   edit(w, { name: 'Snapshot', birthDate: 'wrong', age: '4:0' })
-  w.requestSave()
+  w.requestDownload()
   w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
   w.chooseFileName(phase(w, 'file-name').token, 'Snapshot.~Z4')
   const download = phase(w, 'download')
@@ -425,13 +440,14 @@ test('saving an older snapshot preserves newer edits while referencing exactly t
   assert.equal(w.getSnapshot().current.birthDate, 'wrong')
   const { ageSource, ...referenceContent } = w.getSnapshot().reference
   assert.deepEqual(referenceContent, stored)
-  assert.equal(w.getSnapshot().association.fileName, 'Snapshot.~Z4')
+  assert.equal(w.getSnapshot().association, null)
+  assert.equal(w.getSnapshot().downloadInitiated, true)
   assert.equal(w.getSnapshot().status, 'Ulagrede endringer')
 })
 
 test('byte buffers exposed by snapshots cannot corrupt the internal save payload', () => {
   const w = workflow()
-  w.requestSave()
+  w.requestDownload()
   const name = phase(w, 'file-name')
   const before = name.bytes.slice()
   name.bytes.fill(0)
@@ -479,7 +495,8 @@ for (const target of ['open', 'new']) {
           assert.equal(w.getSnapshot().status, 'Ingen ulagrede endringer')
         } else {
           assert.equal(phase(w, 'choose-file').requiresUserClick, true)
-          assert.equal(w.getSnapshot().association.fileName, 'Saved edits')
+          assert.equal(w.getSnapshot().association.fileName, 'Barn.~Z4')
+          assert.equal(w.getSnapshot().downloadInitiated, true)
           assert.equal(w.getSnapshot().reference.name, 'Edited')
           assert.equal(w.getSnapshot().status, 'Endringer lagret')
         }
@@ -506,7 +523,8 @@ test('a completed save survives subsequent cancelled, failed or malformed openin
     w.receiveRead(phase(w, 'reading').token, outcome)
     assert.deepEqual(content(w), saved)
     assert.equal(w.getSnapshot().reference.name, 'Saved first')
-    assert.equal(w.getSnapshot().association.fileName, 'First saved')
+    assert.equal(w.getSnapshot().association, null)
+    assert.equal(w.getSnapshot().downloadInitiated, true)
   }
 })
 
@@ -554,8 +572,8 @@ test('duplicate commands cannot replace a pending operation or change its docume
   const before = w.getSnapshot()
   assert.equal(w.requestOpen().kind, 'busy')
   assert.equal(w.requestNew().kind, 'busy')
-  assert.equal(w.requestSave().kind, 'busy')
-  assert.equal(w.requestSave('save-as').kind, 'busy')
+  assert.equal(w.requestDownload().kind, 'busy')
+  assert.equal(w.requestDownload().kind, 'busy')
   assert.deepEqual(w.getSnapshot(), before)
   const originalChoose = phase(w, 'choose-file')
   w.beginRead(originalChoose.token)
@@ -605,7 +623,7 @@ test('a completed download cannot update metadata again after a later operation'
 test('each validation decision uses a fresh token, preventing duplicated continue from blanking the next field', () => {
   const w = workflow()
   edit(w, { birthDate: 'bad birth', testDate: 'bad test' })
-  w.requestSave()
+  w.requestDownload()
   const first = phase(w, 'validation')
   w.chooseValidation(first.token, { kind: 'continue' })
   const second = phase(w, 'validation')
@@ -623,7 +641,7 @@ test('edits invalidate pending unsaved/format/name decisions while preserving th
   const unsaved = phase(w, 'unsaved-changes')
   edit(w, { name: 'Second' })
   assert.equal(w.chooseUnsaved(unsaved.token, 'discard').kind, 'ignored')
-  w.requestSave()
+  w.requestDownload()
   const named = phase(w, 'file-name')
   edit(w, { name: 'Third' })
   assert.equal(w.chooseFileName(named.token, 'Old snapshot').kind, 'ignored')
@@ -648,7 +666,7 @@ test('the owned state excludes calculation/session settings and preserves unrela
   finishSave(w)
   const { ageSource, ...stored } = w.getSnapshot().current
   assert.deepEqual(stored, input)
-  assert.deepEqual(Object.keys(w.getSnapshot()).sort(), ['association', 'current', 'phase', 'reference', 'status'])
+  assert.deepEqual(Object.keys(w.getSnapshot()).sort(), ['association', 'current', 'downloadInitiated', 'phase', 'reference', 'status'])
 })
 
 test('discard before an unsuccessful open does not erase the old unsaved registration', () => {
@@ -678,17 +696,98 @@ test('malformed unknown files cannot prompt for format acceptance or change the 
   assert.deepEqual(content(w), before)
 })
 
-test('accepted blankings do not leak through a subsequent encoding failure or file-name cancellation', () => {
+test('blocking encoding errors precede blanking decisions, and filename cancellation never applies blankings', () => {
   for (const name of ['😀', 'Encodable']) {
     const w = workflow()
     edit(w, { name, birthDate: 'wrong' })
     const before = content(w)
-    w.requestSave()
-    const result = w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
-    if (name === '😀') assert.equal(result.code, 'serialization')
-    else w.cancel(phase(w, 'file-name').token)
+    const result = w.requestDownload()
+    if (name === '😀') {
+      assert.equal(result.code, 'serialization')
+      phase(w, 'idle')
+    } else {
+      w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
+      w.cancel(phase(w, 'file-name').token)
+    }
     assert.deepEqual(content(w), before)
   }
+})
+
+test('blocking name error precedes the age-pair dialog, then Bruk retting reaches bytes and committed content', () => {
+  const w = workflow()
+  edit(w, { name: '😀', birthDate: '23.10.2025', testDate: '23.10.2026', age: '1:0' })
+  const before = content(w)
+  const blocked = w.requestDownload()
+  assert.equal(blocked.code, 'serialization')
+  assert.equal(blocked.detail.code, 'unrepresentable-character')
+  assert.equal(blocked.detail.field, 'name')
+  phase(w, 'idle')
+  assert.deepEqual(content(w), before)
+  edit(w, { name: 'Corrected name' })
+  const original = w.getSnapshot().current
+  w.requestDownload()
+  const decision = phase(w, 'validation')
+  assert.equal(decision.validation.problem.kind, 'date-pair-out-of-range')
+  w.chooseValidation(decision.token, { kind: 'correct-dates', birthDate: '23.10.2022', testDate: '23.10.2026' })
+  const named = phase(w, 'file-name')
+  const candidate = parseNubu100(named.bytes).record
+  assert.equal(candidate.birthDate, '23.10.2022')
+  assert.equal(candidate.age, '4:0')
+  assert.deepEqual(w.getSnapshot().current, original)
+  w.chooseFileName(named.token, 'Corrected.~Z4')
+  w.receiveDownload(phase(w, 'download').token, 'started')
+  assert.equal(w.getSnapshot().current.birthDate, candidate.birthDate)
+  assert.equal(w.getSnapshot().current.age, candidate.age)
+  assert.deepEqual(w.getSnapshot().current, w.getSnapshot().reference)
+})
+
+test('all unconditional format checks precede each kind of interactive date or age decision', () => {
+  for (const dates of [
+    { birthDate: 'bad', testDate: '', age: '' },
+    { birthDate: '', testDate: 'bad', age: '' },
+    { birthDate: '', testDate: '', age: 'bad' },
+    { birthDate: '23.10.2025', testDate: '23.10.2026', age: '' },
+  ]) {
+    for (const bad of [
+      { name: '😀' }, { note: '😀' }, { note2: 'bad\ntext' },
+      { gender: 'invalid' }, { items: Array(50).fill('too long') },
+      { items: Array(50).fill('😀') },
+    ]) {
+      const w = workflow()
+      edit(w, { ...dates, ...bad })
+      const original = content(w)
+      assert.equal(w.requestDownload().code, 'serialization')
+      phase(w, 'idle')
+      assert.deepEqual(content(w), original)
+    }
+  }
+})
+
+test('date and age text that can be corrected or blanked retains its existing decision rules', () => {
+  for (const field of ['birthDate', 'testDate', 'age']) {
+    const w = workflow()
+    edit(w, { birthDate: '', testDate: '', age: '', [field]: '😀' })
+    const original = content(w)
+    w.requestDownload()
+    const pending = phase(w, 'validation')
+    assert.equal(pending.validation.problem.field, field)
+    w.chooseValidation(pending.token, { kind: 'continue' })
+    assert.equal(parseNubu100(phase(w, 'file-name').bytes).record[field], '')
+    w.cancel(phase(w, 'file-name').token)
+    assert.deepEqual(content(w), original)
+  }
+})
+
+test('the final serialization check still rejects unencodable age preserved by an explicit pair decision', () => {
+  const w = workflow()
+  edit(w, { birthDate: '23.10.2026', testDate: '22.10.2026', age: '😀' })
+  const original = content(w)
+  w.requestDownload()
+  const result = w.chooseValidation(phase(w, 'validation').token, { kind: 'continue' })
+  assert.equal(result.code, 'serialization')
+  assert.equal(result.detail.field, 'age')
+  phase(w, 'idle')
+  assert.deepEqual(content(w), original)
 })
 
 test('Escape/dialog-close cancellation can safely terminate every awaited stage', () => {
@@ -700,8 +799,8 @@ test('Escape/dialog-close cancellation can safely terminate every awaited stage'
       const input = encodeWindows1252(new TextDecoder('windows-1252').decode(bytes()).replace('NUBUMotor_100', 'Other')).bytes
       w.receiveRead(startRead(w), { kind: 'read', fileName: 'Other', bytes: input })
     },
-    w => { edit(w, { birthDate: 'wrong' }); w.requestSave() },
-    w => w.requestSave(),
+    w => { edit(w, { birthDate: 'wrong' }); w.requestDownload() },
+    w => w.requestDownload(),
     w => prepareDownload(w),
   ]
   for (const setup of setups) {
@@ -710,7 +809,7 @@ test('Escape/dialog-close cancellation can safely terminate every awaited stage'
     const before = content(w)
     const pending = w.getSnapshot().phase
     assert.notEqual(pending.kind, 'idle')
-    for (const command of [() => w.requestOpen(), () => w.requestNew(), () => w.requestSave()]) {
+    for (const command of [() => w.requestOpen(), () => w.requestNew(), () => w.requestDownload()]) {
       assert.equal(command().kind, 'busy')
       assert.deepEqual(w.getSnapshot().phase, pending)
     }
@@ -718,5 +817,34 @@ test('Escape/dialog-close cancellation can safely terminate every awaited stage'
     assert.deepEqual(content(w), before)
     assert.equal(w.cancel(pending.token).kind, 'ignored')
     phase(w, 'idle')
+  }
+})
+
+test('download history survives edits and clear-form but resets on accepted open or New', () => {
+  for (const opened of [false, true]) {
+    const w = workflow()
+    if (opened) open(w)
+    const association = w.getSnapshot().association
+    finishSave(w, { fileName: 'Different.ext' })
+    const downloaded = w.getSnapshot()
+    assert.equal(downloaded.downloadInitiated, true)
+    assert.deepEqual(downloaded.association, association)
+    edit(w, { name: 'Edit after download' })
+    assert.equal(w.getSnapshot().downloadInitiated, true)
+    assert.equal(w.getSnapshot().status, 'Ulagrede endringer')
+    w.edit(downloaded.current)
+    assert.equal(w.getSnapshot().status, 'Endringer lagret')
+    w.clearForm(true)
+    assert.equal(w.getSnapshot().downloadInitiated, true)
+    assert.deepEqual(w.getSnapshot().association, association)
+    w.edit(w.getSnapshot().reference)
+    open(w, bytes(), 'Next file.egen')
+    assert.equal(w.getSnapshot().downloadInitiated, false)
+    assert.equal(w.getSnapshot().association.fileName, 'Next file.egen')
+    finishSave(w)
+    w.requestNew()
+    assert.equal(w.getSnapshot().downloadInitiated, false)
+    assert.equal(w.getSnapshot().association, null)
+    assert.equal(w.getSnapshot().status, 'Ingen ulagrede endringer')
   }
 })

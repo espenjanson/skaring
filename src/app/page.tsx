@@ -1,31 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Registration, RegistrationFileState, registrationStatus, createRegistration, copyRegistration, registrationsEqual, itemLabels, singleLine, isItemCharacter } from "../domain/registration"
+import { useCallback, useEffect, useState } from "react"
+import { createRegistration, itemLabels, singleLine, isItemCharacter } from "../domain/registration"
+import { FileDialogs } from "../components/FileDialogs"
+import { useRegistrationFiles } from "./useRegistrationFiles"
+import { registrationCaption } from "../file/fileMessages"
 import "./registration.css"
 import { DateField, dateAge, editRegistrationDate, finishRegistrationDate, finishManualAge, manualAgeError, parseDate } from "../domain/dateAge"
 
 export default function Page() {
-  const [data, setData] = useState<Registration | null>(null)
-  const [reference, setReference] = useState<Registration | null>(null)
   const [checked, setChecked] = useState({ birthDate: false, testDate: false, age: false, pair: false })
-  // Only a completed file operation may change this lifecycle state in a future stage.
-  const [fileState] = useState<RegistrationFileState>({ kind: "new" })
-  // Browser initialization avoids server timezone differences.
+  const resetChecked = useCallback(() => setChecked({ birthDate: false, testDate: false, age: false, pair: false }), [])
+  const files = useRegistrationFiles(resetChecked)
+  const data = files.state?.current
+  const setData = files.edit
+  const dirty = files.state?.status === "Ulagrede endringer"
   useEffect(() => {
-    const initial = createRegistration(new Date())
-    setData(initial)
-    setReference(copyRegistration(initial))
-  }, [])
-  const dirty = !!data && !!reference && !registrationsEqual(data, reference)
-  useEffect(() => {
+    if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => {
-      if (dirty) { event.preventDefault(); event.returnValue = "" }
+      event.preventDefault(); event.returnValue = ""
     }
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
-  if (!data) return <main className="registration-window">Laster skjema …</main>
+  if (!data || !files.state) return <main className="registration-window">Laster skjema …</main>
+  const phase = files.state.phase
+  const busy = phase.kind !== "idle"
   function change(field: "name" | "note" | "note2" | "age", value: string) {
     setData(current => current && ({ ...current, [field]: singleLine(value) }))
   }
@@ -42,16 +42,27 @@ export default function Page() {
     ? "Ugyldig dato. Bruk dag.måned.år." : null
   const testError = checked.testDate && parseDate(data.testDate).kind === "invalid"
     ? "Ugyldig dato. Bruk dag.måned.år."
-    : checked.pair && pair.kind === "reversed" ? "Testdato kan ikke være før født dato." : null
+    : checked.pair && pair.kind === "reversed" ? "Testdato er tidligere enn født dato." : null
   const ageError = [
     checked.pair && pair.kind === "out-of-range" ? "Datoene gir alder utenfor 1:6–99:11." : null,
     checked.age && data.ageSource === "manual" ? manualAgeError(data.age) : null,
   ].filter(Boolean).join(" ") || null
   return <main className="registration-window">
-    <div className="window-caption">Skåring av motoriske oppgaver i NUBU 4-16 (Ikke lagret)</div>
+    <div className="window-caption">{registrationCaption(files.state)}</div>
+    <div className="file-commands" role="group" aria-label="Fil">
+      <button type="button" disabled={busy} onClick={files.open}>Åpne…</button>
+      <button type="button" disabled={busy} onClick={files.download}>Last ned…</button>
+    </div>
+    <input ref={files.input} type="file" hidden aria-label="Velg registreringsfil" onChange={files.selected} />
+    {files.message && <div className={`file-feedback${files.message.kind === "error" ? " file-error" : ""}`} role={files.message.kind === "error" ? "alert" : "status"}><span>{files.message.text}</span><button type="button" onClick={files.dismissMessage}>Lukk melding</button></div>}
+    {(phase.kind === "reading" || phase.kind === "choose-file") && <div className="file-feedback" role="status">
+      <span>{phase.kind === "reading" ? "Leser fil …" : "Velg en fil i filvelgeren."}</span>
+      <button type="button" onClick={() => files.cancel(phase.token)}>Avbryt åpning</button>
+    </div>}
     <div className="registration-content">
       <h1>Skåring av motoriske oppgaver i NUBU 4-16</h1>
       <form autoComplete="off" onSubmit={event => event.preventDefault()}>
+        <fieldset className="registration-form" disabled={busy}>
         <div className="person-fields">
           <label className="wide-field"><span>Navn:</span><input value={data.name} onChange={e => change("name", e.target.value)} /></label>
           <div className="details-row">
@@ -85,12 +96,14 @@ export default function Page() {
         <div className="form-actions"><button type="button" onClick={() => {
           if (dirty && !window.confirm("Tømme alle feltene? Ulagrede endringer går tapt.")) return
           // Clearing is an edit; the original reference remains unchanged.
-          setData(createRegistration(new Date()))
+          setData(() => createRegistration(new Date()))
           setChecked({ birthDate: false, testDate: false, age: false, pair: false })
         }}>Tøm formular</button><button type="button" disabled>Vis resultat</button></div>
+        </fieldset>
       </form>
-      <p className="change-status" role="status">{reference && registrationStatus(data, reference, fileState)}</p>
-      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Lagring og resultatvisning er ikke tilgjengelig. Innholdet går tapt når siden lukkes.</p>
+      <p className="change-status" role="status">{files.state.status}</p>
+      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Resultatvisning er ennå ikke tilgjengelig.</p>
     </div>
+    <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} />
   </main>
 }

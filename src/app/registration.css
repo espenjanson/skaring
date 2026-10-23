@@ -38,6 +38,23 @@ button:disabled { color: #777; }
 .change-status { margin: 10px 0 0; font-size: 11px; }
 .stage-note { line-height: 1.5; font-size: 11px; color: #444; margin: 8px 0 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.window-caption { overflow-wrap: anywhere; }
+.file-commands { display: flex; gap: 4px; padding: 6px 12px; border-bottom: 1px solid #aaa; }
+.file-commands button { min-width: 86px; min-height: 28px; }
+.registration-form { border: 0; margin: 0; padding: 0; min-width: 0; }
+.file-feedback { margin: 8px 12px; display: flex; align-items: center; gap: 10px; line-height: 1.5; }
+.file-feedback button { min-width: 86px; min-height: 28px; flex-shrink: 0; }
+.file-error, .dialog-error { color: #a31616; }
+.file-dialog { width: 500px; max-width: calc(100vw - 32px); padding: 16px; border: 1px solid #555; background: #f0f0f0; color: #000; font: 14px Arial, sans-serif; box-shadow: 3px 3px 12px #0005; }
+.file-dialog::backdrop { background: #0005; }
+.dialog-caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.dialog-caption h2 { font-size: 16px; line-height: 1.4; margin: 0; }
+.dialog-close { min-width: 28px; min-height: 28px; font-size: 20px; line-height: 1; }
+.file-dialog p { line-height: 1.5; overflow-wrap: anywhere; }
+.dialog-field { display: flex; flex-direction: column; gap: 5px; margin: 12px 0; }
+.dialog-field input { width: 100%; height: 28px; font-size: 14px; }
+.dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+.dialog-actions button { padding: 6px 10px; min-width: 96px; }
 @media (max-width: 620px) {
   .registration-content { padding: 20px 16px; }
   h1 { white-space: normal; margin-left: 0; font-size: 21px; }
