@@ -7,7 +7,7 @@ import { FileWorkflow } from "../domain/fileWorkflow";
 import type { FileWorkflowSnapshot, WorkflowOutcome } from "../domain/fileWorkflow";
 import type { SaveValidationDecision } from "../domain/saveValidation";
 import { BrowserFileActions } from "../file/browserFiles";
-import { DOWNLOAD_NOTICE, OPEN_DIRTY_NOTICE, workflowMessage, updateFileMessage } from "../file/fileMessages";
+import { DOWNLOAD_NOTICE, workflowMessage, updateFileMessage } from "../file/fileMessages";
 import type { FileMessage } from "../file/fileMessages";
 
 /** React publishes workflow snapshots; it never maintains a second reference or dirty flag. */
@@ -61,7 +61,9 @@ export function useRegistrationFiles(onAccepted: () => void) {
     const message = workflowMessage(outcome);
     if (message) showMessage("error", message);
     if (outcome.kind === "saved") showMessage("notice", DOWNLOAD_NOTICE);
-    if (outcome.kind === "opened" || outcome.kind === "saved") onAccepted();
+    if (outcome.kind === "new") setMessage(null);
+    if (outcome.kind === "cleared") setMessage(previous => updateFileMessage(previous, { kind: "edit" }));
+    if (["opened", "saved", "new", "cleared"].includes(outcome.kind)) onAccepted();
   }
 
   function edit(update: (data: Registration) => Registration) {
@@ -78,16 +80,9 @@ export function useRegistrationFiles(onAccepted: () => void) {
     if (pickerToken.current === token) pickerToken.current = null;
   }
 
-  function open() {
+  function chooseFile() {
     const current = workflow.current;
-    if (!current || current.getSnapshot().phase.kind !== "idle") return;
-    // Stage 4 policy only; stage 5 will render the existing workflow's three-way choice.
-    if (current.getSnapshot().status === "Ulagrede endringer") {
-      showMessage("error", OPEN_DIRTY_NOTICE);
-      return;
-    }
-    setMessage(null);
-    publish(current, current.requestOpen());
+    if (!current) return;
     const phase = current.getSnapshot().phase;
     if (phase.kind !== "choose-file") return;
     pickerToken.current = phase.token;
@@ -100,6 +95,37 @@ export function useRegistrationFiles(onAccepted: () => void) {
       cancel(phase.token);
       showMessage("error", "Kunne ikke åpne filen.");
     }
+  }
+
+  function open() {
+    const current = workflow.current;
+    if (!current || current.getSnapshot().phase.kind !== "idle") return;
+    setMessage(null);
+    publish(current, current.requestOpen());
+    chooseFile();
+  }
+
+  function newRegistration() {
+    const current = workflow.current;
+    if (current) publish(current, current.requestNew());
+  }
+
+  function clearForm() {
+    const current = workflow.current;
+    if (current) publish(current, current.requestClearForm());
+  }
+
+  function clearChosen(token: number, confirmed: boolean) {
+    const current = workflow.current;
+    if (current) publish(current, current.chooseClearForm(token, confirmed));
+  }
+
+  function unsavedChosen(token: number, choice: "save" | "discard" | "cancel") {
+    const current = workflow.current;
+    if (!current) return;
+    const outcome = current.chooseUnsaved(token, choice);
+    publish(current, outcome);
+    if (outcome.kind === "ok") chooseFile();
   }
 
   async function selected(event: ChangeEvent<HTMLInputElement>) {
@@ -128,7 +154,11 @@ export function useRegistrationFiles(onAccepted: () => void) {
     const adapter = actions.current;
     if (!current || !adapter) return;
     // Synchronous adapter call preserves the save-button user activation.
-    publish(current, adapter.saveNamed(token, fileName));
+    const outcome = adapter.saveNamed(token, fileName);
+    publish(current, outcome);
+    // Try continuation in this same user gesture. Velg fil remains available if
+    // the browser consumes activation for the download and silently blocks it.
+    if (outcome.kind === "saved" && outcome.continuation === "open") chooseFile();
   }
 
   function validationChosen(token: number, decision: SaveValidationDecision) {
@@ -142,7 +172,8 @@ export function useRegistrationFiles(onAccepted: () => void) {
   }
 
   return {
-    state, input, message, edit, open, selected, download, cancel,
+    state, input, message, edit, open, selected, download, cancel, chooseFile,
+    newRegistration, clearForm, clearChosen, unsavedChosen,
     nameChosen, validationChosen, formatChosen, dismissMessage: () => setMessage(null),
   };
 }

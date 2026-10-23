@@ -67,3 +67,68 @@ test('reversed date warning uses the approved non-prohibitive wording', () => {
   assert.match(source, /Testdato er tidligere enn født dato\./)
   assert.doesNotMatch(source, /Testdato kan ikke være før født dato\./)
 })
+
+test('unsaved changes and clear-form dialogs render their distinct approved messages and choices', () => {
+  const { FileDialogs } = component('components/FileDialogs.tsx')
+  const render = kind => renderToStaticMarkup(React.createElement(FileDialogs, { phase: { kind, token: 1, next: 'open' } }))
+  const unsaved = render('unsaved-changes')
+  assert.match(unsaved, /Det er ulagrede endringer\./)
+  assert.match(unsaved, /Vil du laste ned endringene før du fortsetter\?/)
+  for (const label of ['Last ned', 'Fortsett uten nedlasting', 'Avbryt']) assert.ok(unsaved.includes(`>${label}</button>`))
+  const clear = render('clear-confirmation')
+  assert.match(clear, /Tømme alle feltene\? Ulagrede endringer går tapt\./)
+  assert.match(clear, />OK<\/button>/)
+  assert.match(clear, />Avbryt<\/button>/)
+  assert.doesNotMatch(clear, /Fortsett uten nedlasting|Vil du laste ned/)
+})
+
+test('all unsaved choices, Escape and close buttons delegate to the correct token without mutating content', () => {
+  const cancelled = [], choices = []
+  const fakeReact = { ...React, useRef: () => ({ current: null }), useId: () => 'test-id', useEffect() {} }
+  const { FileDialogs } = component('components/FileDialogs.tsx', { react: fakeReact })
+  const props = { phase: { kind: 'unsaved-changes', token: 17, next: 'open' }, cancel: token => cancelled.push(token), unsavedChosen: (...args) => choices.push(args) }
+  const dialog = FileDialogs(props)
+  const actions = dialog.props.children[1].props.children
+  actions[0].props.onClick()
+  actions[1].props.onClick()
+  actions[2].props.onClick()
+  assert.deepEqual(choices, [[17, 'save'], [17, 'discard']])
+  const modal = dialog.type(dialog.props)
+  let prevented = false
+  modal.props.onCancel({ preventDefault() { prevented = true } })
+  modal.props.children[0].props.children[1].props.onClick()
+  assert.equal(prevented, true)
+  assert.deepEqual(cancelled, [17, 17, 17])
+})
+
+test('the page registers and cleans up only the standard beforeunload warning when dirty', t => {
+  const previousWindow = globalThis.window
+  t.after(() => { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow })
+  for (const dirty of [false, true]) {
+    const effects = [], registrations = [], removals = []
+    const w = new FileWorkflow()
+    if (dirty) w.edit({ ...w.getSnapshot().current, name: 'Unsaved' })
+    const files = { state: w.getSnapshot(), input: { current: null } }
+    const { default: Page } = component('app/page.tsx', {
+      react: { ...React, useEffect: effect => effects.push(effect) },
+      './useRegistrationFiles': { useRegistrationFiles: () => files },
+    })
+    globalThis.window = {
+      addEventListener: (...args) => registrations.push(args),
+      removeEventListener: (...args) => removals.push(args),
+    }
+    renderToStaticMarkup(React.createElement(Page))
+    const cleanup = effects[0]()
+    assert.equal(registrations.length, dirty ? 1 : 0)
+    if (dirty) {
+      assert.equal(registrations[0][0], 'beforeunload')
+      let prevented = false
+      const event = { preventDefault() { prevented = true }, returnValue: undefined }
+      registrations[0][1](event)
+      assert.equal(prevented, true)
+      assert.equal(event.returnValue, '')
+      cleanup()
+      assert.deepEqual(removals, registrations)
+    }
+  }
+})

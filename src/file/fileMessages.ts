@@ -5,7 +5,6 @@ import type { FileNameError } from "./fileName";
 import type { FileWorkflowSnapshot } from "../domain/fileWorkflow";
 
 export const DOWNLOAD_NOTICE = "Nedlastingen er startet. Kontroller at filen blir lagret.";
-export const OPEN_DIRTY_NOTICE = "Registreringen har ulagrede endringer. Last ned før du åpner en annen fil. Det fullstendige valget ved ulagrede endringer blir tilgjengelig i etappe 5.";
 
 export type FileMessage = Readonly<{ kind: "error" | "notice"; text: string }> | null;
 export type FileMessageEvent =

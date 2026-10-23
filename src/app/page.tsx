@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { createRegistration, itemLabels, singleLine, isItemCharacter } from "../domain/registration"
+import { itemLabels, singleLine, isItemCharacter } from "../domain/registration"
 import { FileDialogs } from "../components/FileDialogs"
 import { useRegistrationFiles } from "./useRegistrationFiles"
 import { registrationCaption } from "../file/fileMessages"
@@ -51,12 +51,14 @@ export default function Page() {
     <div className="window-caption">{registrationCaption(files.state)}</div>
     <div className="file-commands" role="group" aria-label="Fil">
       <button type="button" disabled={busy} onClick={files.open}>Åpne…</button>
+      <button type="button" disabled={busy} onClick={files.newRegistration}>Ny</button>
       <button type="button" disabled={busy} onClick={files.download}>Last ned…</button>
     </div>
     <input ref={files.input} type="file" hidden aria-label="Velg registreringsfil" onChange={files.selected} />
     {files.message && <div className={`file-feedback${files.message.kind === "error" ? " file-error" : ""}`} role={files.message.kind === "error" ? "alert" : "status"}><span>{files.message.text}</span><button type="button" onClick={files.dismissMessage}>Lukk melding</button></div>}
     {(phase.kind === "reading" || phase.kind === "choose-file") && <div className="file-feedback" role="status">
       <span>{phase.kind === "reading" ? "Leser fil …" : "Velg en fil i filvelgeren."}</span>
+      {phase.kind === "choose-file" && <button type="button" onClick={files.chooseFile}>Velg fil</button>}
       <button type="button" onClick={() => files.cancel(phase.token)}>Avbryt åpning</button>
     </div>}
     <div className="registration-content">
@@ -93,17 +95,12 @@ export default function Page() {
             }} /></label>
           })}</div>)}</div>
         </fieldset>
-        <div className="form-actions"><button type="button" onClick={() => {
-          if (dirty && !window.confirm("Tømme alle feltene? Ulagrede endringer går tapt.")) return
-          // Clearing is an edit; the original reference remains unchanged.
-          setData(() => createRegistration(new Date()))
-          setChecked({ birthDate: false, testDate: false, age: false, pair: false })
-        }}>Tøm formular</button><button type="button" disabled>Vis resultat</button></div>
+        <div className="form-actions"><button type="button" onClick={files.clearForm}>Tøm formular</button><button type="button" disabled>Vis resultat</button></div>
         </fieldset>
       </form>
       <p className="change-status" role="status">{files.state.status}</p>
       <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Resultatvisning er ennå ikke tilgjengelig.</p>
     </div>
-    <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} />
+    <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} unsavedChosen={files.unsavedChosen} clearChosen={files.clearChosen} />
   </main>
 }

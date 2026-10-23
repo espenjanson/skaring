@@ -35,6 +35,7 @@ interface PreparedSave {
 
 export type FileWorkflowPhase =
   | { readonly kind: "idle" }
+  | { readonly kind: "clear-confirmation"; readonly token: number }
   | {
       readonly kind: "unsaved-changes";
       readonly token: number;
@@ -89,7 +90,7 @@ export type ReadOutcome =
   | { kind: "cancelled" };
 
 export type WorkflowOutcome =
-  | { kind: "ok" | "busy" | "ignored" | "cancelled" | "opened" | "new" }
+  | { kind: "ok" | "busy" | "ignored" | "cancelled" | "opened" | "new" | "cleared" }
   | { kind: "saved"; continuation: NextAction | null }
   | { kind: "error"; code: "read-failed" | "invalid-file-name" }
   | { kind: "error"; code: "format" | "serialization"; detail: Nubu100Error }
@@ -181,6 +182,27 @@ export class FileWorkflow {
     return confirmed
       ? this.edit(createRegistration(this.now()))
       : { kind: "cancelled" };
+  }
+
+  /** Keep the existing clear confirmation policy separate from replacement decisions. */
+  requestClearForm(): WorkflowOutcome {
+    if (this.phase.kind !== "idle") return { kind: "busy" };
+    if (!registrationsEqual(this.document.current, this.document.reference)) {
+      this.phase = Object.freeze({ kind: "clear-confirmation", token: this.nextToken++ });
+      return { kind: "ok" };
+    }
+    this.clearForm(true);
+    return { kind: "cleared" };
+  }
+
+  chooseClearForm(token: number, confirmed: boolean): WorkflowOutcome {
+    if (this.phase.kind !== "clear-confirmation" || this.phase.token !== token) {
+      return { kind: "ignored" };
+    }
+    if (!confirmed) return this.cancel(token);
+    this.phase = IDLE;
+    this.clearForm(true);
+    return { kind: "cleared" };
   }
 
   requestOpen(): WorkflowOutcome {

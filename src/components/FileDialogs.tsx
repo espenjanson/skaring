@@ -89,11 +89,26 @@ interface FileDialogsProps {
   nameChosen(token: number, name: string): void;
   validationChosen(token: number, decision: SaveValidationDecision): void;
   formatChosen(token: number, choice: "continue" | "cancel"): void;
+  unsavedChosen(token: number, choice: "save" | "discard" | "cancel"): void;
+  clearChosen(token: number, confirmed: boolean): void;
 }
 
 /** Token keys reset dialog drafts only when the workflow advances to a new step. */
 export function FileDialogs(props: FileDialogsProps) {
   const { phase } = props;
+  if (phase.kind === "unsaved-changes") return <Modal key={phase.token} title="Det er ulagrede endringer." cancel={() => props.cancel(phase.token)}>
+    <p>Vil du laste ned endringene før du fortsetter?</p>
+    <div className="dialog-actions">
+      <button type="button" onClick={() => props.unsavedChosen(phase.token, "save")}>Last ned</button>
+      <button type="button" onClick={() => props.unsavedChosen(phase.token, "discard")}>Fortsett uten nedlasting</button>
+      <button type="button" onClick={() => props.cancel(phase.token)}>Avbryt</button>
+    </div>
+  </Modal>;
+  if (phase.kind === "clear-confirmation") return <Modal key={phase.token} title="Tøm formular" cancel={() => props.cancel(phase.token)}>
+    <p>Tømme alle feltene? Ulagrede endringer går tapt.</p>
+    <div className="dialog-actions"><button type="button" onClick={() => props.clearChosen(phase.token, true)}>OK</button>
+      <button type="button" onClick={() => props.cancel(phase.token)}>Avbryt</button></div>
+  </Modal>;
   if (phase.kind === "file-name") return <FileNameDialog key={phase.token} phase={phase} cancel={() => props.cancel(phase.token)} choose={name => props.nameChosen(phase.token, name)} />;
   if (phase.kind === "validation") return <ValidationDialog key={phase.token} phase={phase} cancel={() => props.cancel(phase.token)} choose={decision => props.validationChosen(phase.token, decision)} />;
   if (phase.kind === "unknown-format") return <Modal key={phase.token} title="Ukjent filformat. Vil du fortsette?" cancel={() => props.cancel(phase.token)}>

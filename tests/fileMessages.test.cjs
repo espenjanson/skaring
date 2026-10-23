@@ -1,13 +1,12 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTypeScript } = require('./helpers/loadTypeScript.cjs')
-const { workflowMessage, fileNameMessage, DOWNLOAD_NOTICE, OPEN_DIRTY_NOTICE, updateFileMessage, registrationCaption } = loadTypeScript('file/fileMessages.ts')
+const { workflowMessage, fileNameMessage, DOWNLOAD_NOTICE, updateFileMessage, registrationCaption } = loadTypeScript('file/fileMessages.ts')
 
 test('file errors and download notice use the approved Bokmål wording', () => {
   assert.equal(workflowMessage({ kind: 'error', code: 'read-failed' }), 'Kunne ikke åpne filen.')
   assert.equal(workflowMessage({ kind: 'error', code: 'format', detail: {} }), 'Kunne ikke åpne filen.')
   assert.equal(DOWNLOAD_NOTICE, 'Nedlastingen er startet. Kontroller at filen blir lagret.')
-  assert.match(OPEN_DIRTY_NOTICE, /Last ned før/)
   assert.equal(workflowMessage({ kind: 'cancelled' }), null)
   assert.match(workflowMessage({ kind: 'error', code: 'download-failed' }), /ikke lagret/)
 })
@@ -17,7 +16,7 @@ test('a single persistent download notice survives editing, can be dismissed and
   let state = updateFileMessage(null, { kind: 'show', message: notice })
   for (let edit = 0; edit < 10; edit++) state = updateFileMessage(state, { kind: 'edit' })
   assert.deepEqual(state, notice)
-  const error = { kind: 'error', text: OPEN_DIRTY_NOTICE }
+  const error = { kind: 'error', text: 'Kunne ikke åpne filen.' }
   state = updateFileMessage(state, { kind: 'show', message: error })
   assert.deepEqual(state, error)
   state = updateFileMessage(state, { kind: 'show', message: notice })
