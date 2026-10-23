@@ -39,9 +39,22 @@ button:disabled { color: #777; }
 .stage-note { line-height: 1.5; font-size: 11px; color: #444; margin: 8px 0 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .window-caption { overflow-wrap: anywhere; }
-.file-commands { display: flex; gap: 4px; padding: 6px 12px; border-bottom: 1px solid #aaa; }
-.file-commands button { min-width: 86px; min-height: 28px; }
-.registration-form { border: 0; margin: 0; padding: 0; min-width: 0; }
+.registration-form { --task-right-margin: 31px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.tasks, .form-actions { margin-right: var(--task-right-margin); }
+.archive-bar { position: relative; padding: 6px 12px; border-bottom: 1px solid #aaa; }
+.archive-trigger { min-width: 60px; min-height: 28px; }
+.archive-trigger[aria-expanded="true"] { background: #e8f3f8; }
+.archive-menu { position: absolute; z-index: 10; top: 100%; left: 12px; min-width: 180px; padding: 4px; border: 1px solid #888; background: #f0f0f0; box-shadow: 2px 3px 6px #0003; }
+.archive-menu button { display: block; width: 100%; min-height: 28px; border: 0; box-shadow: none; padding: 4px 12px; text-align: left; }
+.archive-menu button:not(:disabled):hover, .archive-menu button:focus-visible { background: #e8f3f8; }
+.archive-menu [role="separator"] { border-top: 1px solid #aaa; margin: 4px 2px; }
+.result-view { padding: 22px 24px; }
+.result-controls { margin-bottom: 24px; }
+.result-presentation h1 { white-space: normal; margin: 0 0 24px; }
+.result-presentation p { line-height: 1.5; }
+@media print {
+  .result-controls { display: none; }
+}
 .file-feedback { margin: 8px 12px; display: flex; align-items: center; gap: 10px; line-height: 1.5; }
 .file-feedback button { min-width: 86px; min-height: 28px; flex-shrink: 0; }
 .file-error, .dialog-error { color: #a31616; }
@@ -56,6 +69,7 @@ button:disabled { color: #777; }
 .dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
 .dialog-actions button { padding: 6px 10px; min-width: 96px; }
 @media (max-width: 620px) {
+  .registration-form { --task-right-margin: 0px; }
   .registration-content { padding: 20px 16px; }
   h1 { white-space: normal; margin-left: 0; font-size: 21px; }
   .person-fields, .tasks { margin-right: 0; }

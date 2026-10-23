@@ -26,14 +26,15 @@ function component(relative, overrides = {}) {
   return loaded.exports
 }
 
-test('the page renders one Last ned command and one dismissible notice, including after editing', () => {
+test('the page renders Arkiv and one dismissible notice, including after editing', () => {
   const w = new FileWorkflow()
   const files = { state: w.getSnapshot(), message: { kind: 'notice', text: DOWNLOAD_NOTICE }, input: { current: null } }
   const { default: Page } = component('app/page.tsx', { './useRegistrationFiles': { useRegistrationFiles: () => files } })
   for (const edited of [false, true]) {
     if (edited) { w.edit({ ...w.getSnapshot().current, name: 'Edited' }); files.state = w.getSnapshot() }
     const html = renderToStaticMarkup(React.createElement(Page))
-    assert.equal((html.match(/>Last ned…<\/button>/g) || []).length, 1)
+    assert.equal((html.match(/>Arkiv<\/button>/g) || []).length, 1)
+    assert.doesNotMatch(html, />(?:Ny|Åpne…|Last ned…)<\/button>/)
     assert.doesNotMatch(html, />Lagre(?: som)?…<\/button>/)
     assert.equal((html.match(/Nedlastingen er startet/g) || []).length, 1)
     assert.match(html, />Lukk melding<\/button>/)

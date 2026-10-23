@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ArchiveMenu } from "../components/ArchiveMenu"
+import { ResultView } from "../components/ResultView"
 import { itemLabels, singleLine, isItemCharacter } from "../domain/registration"
 import { FileDialogs } from "../components/FileDialogs"
 import { useRegistrationFiles } from "./useRegistrationFiles"
@@ -8,6 +10,7 @@ import { registrationCaption } from "../file/fileMessages"
 import "./registration.css"
 import { DateField, dateAge, editRegistrationDate, finishRegistrationDate, finishManualAge, manualAgeError, parseDate } from "../domain/dateAge"
 
+/** Owns the registration lifetime independently of the currently displayed view. */
 export default function Page() {
   const [checked, setChecked] = useState({ birthDate: false, testDate: false, age: false, pair: false })
   const resetChecked = useCallback(() => setChecked({ birthDate: false, testDate: false, age: false, pair: false }), [])
@@ -15,6 +18,8 @@ export default function Page() {
   const data = files.state?.current
   const setData = files.edit
   const dirty = files.state?.status === "Ulagrede endringer"
+  const [view, setView] = useState<"registration" | "result">("registration")
+  const returnFocus = useRef<HTMLElement | null>(null)
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -23,6 +28,13 @@ export default function Page() {
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
+  useEffect(() => {
+    if (view === "registration") returnFocus.current?.focus()
+  }, [view])
+  function showResult() {
+    returnFocus.current = document.activeElement as HTMLElement | null
+    setView("result")
+  }
   if (!data || !files.state) return <main className="registration-window">Laster skjema …</main>
   const phase = files.state.phase
   const busy = phase.kind !== "idle"
@@ -48,12 +60,10 @@ export default function Page() {
     checked.age && data.ageSource === "manual" ? manualAgeError(data.age) : null,
   ].filter(Boolean).join(" ") || null
   return <main className="registration-window">
+    {/* Keep the form and file input mounted so view changes preserve their state. */}
+    <div hidden={view !== "registration"}>
     <div className="window-caption">{registrationCaption(files.state)}</div>
-    <div className="file-commands" role="group" aria-label="Fil">
-      <button type="button" disabled={busy} onClick={files.open}>Åpne…</button>
-      <button type="button" disabled={busy} onClick={files.newRegistration}>Ny</button>
-      <button type="button" disabled={busy} onClick={files.download}>Last ned…</button>
-    </div>
+    <ArchiveMenu busy={busy} newRegistration={files.newRegistration} open={files.open} download={files.download} showResult={showResult} />
     <input ref={files.input} type="file" hidden aria-label="Velg registreringsfil" onChange={files.selected} />
     {files.message && <div className={`file-feedback${files.message.kind === "error" ? " file-error" : ""}`} role={files.message.kind === "error" ? "alert" : "status"}><span>{files.message.text}</span><button type="button" onClick={files.dismissMessage}>Lukk melding</button></div>}
     {(phase.kind === "reading" || phase.kind === "choose-file") && <div className="file-feedback" role="status">
@@ -95,12 +105,14 @@ export default function Page() {
             }} /></label>
           })}</div>)}</div>
         </fieldset>
-        <div className="form-actions"><button type="button" onClick={files.clearForm}>Tøm formular</button><button type="button" disabled>Vis resultat</button></div>
+        <div className="form-actions"><button type="button" onClick={files.clearForm}>Tøm formular</button><button type="button" onClick={showResult}>Vis resultat</button></div>
         </fieldset>
       </form>
       <p className="change-status" role="status">{files.state.status}</p>
-      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Resultatvisning er ennå ikke tilgjengelig.</p>
+      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Resultatvisning kommer i neste etappe.</p>
     </div>
+    </div>
+    {view === "result" && <ResultView back={() => setView("registration")} />}
     <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} unsavedChosen={files.unsavedChosen} clearChosen={files.clearChosen} />
   </main>
 }
