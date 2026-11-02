@@ -41,7 +41,7 @@ async function roundTrip(page, viaMenu = false) {
   await page.getByRole('heading', { name: 'Resultat av motoriske oppgaver i NUBU 4-16', exact: true }).waitFor()
   assert.equal(await page.getByRole('button', { name: 'Arkiv', exact: true }).count(), 0)
   assert.equal(await page.getByText('Resultatvisning kommer i neste etappe.', { exact: true }).count(), 1)
-  await page.getByRole('button', { name: '← Tilbake', exact: true }).click()
+  await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   await page.getByRole('heading', { name: 'Skåring av motoriske oppgaver i NUBU 4-16', exact: true }).waitFor()
 }
 
@@ -83,7 +83,7 @@ test('mouse and keyboard open, traverse, activate and close the menu with usable
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
-  await page.getByRole('button', { name: '← Tilbake' }).click()
+  await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   assert.equal(await trigger.evaluate(n => n === document.activeElement), true)
 })
 
@@ -185,5 +185,99 @@ test('action buttons align with the task frame and person fields at desktop and 
     assert.ok(Math.abs(name.x + name.width - result.x - result.width) <= 1)
     assert.equal(clear.y, result.y)
     assert.ok(clear.x + clear.width < result.x)
+  }
+})
+
+test('Arkiv and Tilbake share typography, frameless hover and visible keyboard focus', async t => {
+  const page = await pageFor(t)
+  const trigger = page.getByRole('button', { name: 'Arkiv', exact: true })
+  async function frameless(control) {
+    assert.deepEqual(await control.evaluate(node => {
+      const style = getComputedStyle(node)
+      return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth, style.boxShadow, style.backgroundColor]
+    }), ['0px', '0px', '0px', '0px', 'none', 'rgba(0, 0, 0, 0)'])
+  }
+  async function focused(control) {
+    assert.equal(await control.evaluate(node => node === document.activeElement && node.matches(':focus-visible') && getComputedStyle(node).outlineStyle !== 'none'), true)
+  }
+  async function appearance(control) {
+    assert.deepEqual(await control.evaluate(node => {
+      const style = getComputedStyle(node)
+      return [style.fontSize, style.fontWeight]
+    }), ['15px', '600'])
+    const before = await control.boundingBox()
+    await control.hover()
+    assert.deepEqual(await control.evaluate(node => {
+      const style = getComputedStyle(node)
+      return [style.backgroundColor, style.borderTopWidth, style.boxShadow]
+    }), ['rgb(232, 243, 248)', '0px', 'none'])
+    assert.deepEqual(await control.boundingBox(), before)
+    await page.mouse.move(790, 800)
+  }
+  await frameless(trigger)
+  await appearance(trigger)
+  assert.equal(await trigger.locator('.archive-chevron[aria-hidden="true"]').count(), 1)
+  await page.keyboard.press('Tab')
+  await focused(trigger)
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('End')
+  await page.keyboard.press('Enter')
+  const back = page.getByRole('button', { name: 'Tilbake', exact: true })
+  await frameless(back)
+  await appearance(back)
+  assert.equal(await back.locator('svg[aria-hidden="true"][focusable="false"]').count(), 1)
+  await page.keyboard.press('Shift+Tab')
+  await focused(back)
+  await page.keyboard.press('Enter')
+  await focused(trigger)
+})
+
+test('the shared menu and message row keeps the heading stable and avoids overlap at narrow widths', async t => {
+  const page = await pageFor(t)
+  const heading = page.getByRole('heading', { name: 'Skåring av motoriske oppgaver i NUBU 4-16', exact: true })
+  const row = page.locator('.menu-message-row')
+  const messages = page.getByRole('region', { name: 'Meldinger', exact: true })
+  const trigger = page.getByRole('button', { name: 'Arkiv', exact: true })
+  async function geometry() {
+    return { heading: await heading.boundingBox(), row: await row.boundingBox(), actions: await page.locator('.form-actions').boundingBox() }
+  }
+  async function noOverlap() {
+    const menuBox = await trigger.boundingBox(), messageBox = await messages.boundingBox()
+    assert.ok(menuBox.x + menuBox.width < messageBox.x)
+    assert.equal(await messages.evaluate(node => node.scrollWidth <= node.clientWidth), true)
+    assert.equal(await row.evaluate(node => getComputedStyle(node).borderBottomWidth), '0px')
+    assert.equal(await page.locator('.archive-bar').evaluate(node => getComputedStyle(node).borderBottomWidth), '0px')
+  }
+  for (const width of [1000, 641, 600, 400, 320]) {
+    await page.setViewportSize({ width, height: 1000 })
+    const empty = await geometry()
+    const download = page.waitForEvent('download')
+    await command(page, 'Last ned…')
+    await page.getByRole('dialog').getByRole('button', { name: 'Last ned', exact: true }).click()
+    await download
+    await page.getByRole('button', { name: 'Lukk melding', exact: true }).waitFor()
+    assert.deepEqual(await geometry(), empty)
+    await noOverlap()
+    if (process.env.NUBU_SCREENSHOT_DIR && [641, 320].includes(width)) {
+      await page.locator('.registration-window').screenshot({ path: path.join(process.env.NUBU_SCREENSHOT_DIR, `message-${width}.png`) })
+    }
+    await page.getByRole('button', { name: 'Lukk melding', exact: true }).click()
+    assert.deepEqual(await geometry(), empty)
+    // A serialization error uses a longer message without changing the file workflow.
+    await page.getByLabel('Navn:', { exact: true }).fill('Fiktiv 😀')
+    await command(page, 'Last ned…')
+    await page.locator('.file-feedback[role="alert"]').waitFor()
+    assert.deepEqual(await geometry(), empty)
+    await noOverlap()
+    await page.getByRole('button', { name: 'Lukk melding', exact: true }).click()
+    await page.getByLabel('Navn:', { exact: true }).fill('')
+  }
+  if (process.env.NUBU_SCREENSHOT_DIR) {
+    await page.setViewportSize({ width: 800, height: 850 })
+    await page.locator('.registration-window').screenshot({ path: path.join(process.env.NUBU_SCREENSHOT_DIR, 'main-adjusted.png') })
+    await trigger.click()
+    await page.locator('.registration-window').screenshot({ path: path.join(process.env.NUBU_SCREENSHOT_DIR, 'menu-adjusted.png') })
+    await page.getByRole('menuitem', { name: 'Vis resultat', exact: true }).click()
+    await page.locator('.registration-window').screenshot({ path: path.join(process.env.NUBU_SCREENSHOT_DIR, 'result-adjusted.png') })
   }
 })

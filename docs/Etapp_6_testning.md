@@ -1,7 +1,23 @@
 # Etapp 6 – menyer och navigation
 
 Utgångspunkt: `fc3532da82af697de1ffbe8731de7b34d3b28635`, godkänd etapp 5.
-Arbetsgren: `codex/huvudbild-etapp-6`. Manuellt godkännande återstår.
+Arbetsgren: `codex/huvudbild-etapp-6`. Manuellt slutgranskad och godkänd av
+projektägaren 2026-11-02, inklusive de sista visuella justeringarna av Arkiv
+och Tilbake.
+
+Beslutade justeringar efter manuell granskning, 2 november 2026: Arkiv visas
+ramlöst med en liten nedåtriktad pil. Arkiv och meddelanden delar en permanent
+rad utan avgränsningslinje mot rubriken. Raden har reserverad höjd per
+skärmbredd; meddelanden bryts inom sin egen kolumn till höger om Arkiv.
+Extra långa meddelanden kan rullas inom meddelandeområdet, som även kan nås
+med tangentbord. Tilbake visas ramlöst med vänsterpil. Båda kontrollerna
+behåller synlig tangentbordsfokus och sin befintliga funktion. Justeringarna
+ingår i projektägarens slutliga godkännande 2026-11-02.
+
+Sista visuella justeringen: Arkiv och Tilbake använder 15 px text och vikt
+600 med samma ljusa, ramlösa hovermarkering. Tilbake har en dekorativ SVG-pil
+med tydligare pilhuvud; kontrollens tillgängliga namn är Tilbake. Arkivs
+befintliga nedåtpil behålls. Funktion, fokusmarkering och placering bevaras.
 
 ## Implementation och avgränsning
 
@@ -61,9 +77,19 @@ nedladdningsnamn kontrollerar att referenskopia och filassociation består.
 Filinputens DOM-identitet kontrolleras också. Knappjusteringen mäts vid
 skärmbredderna 1000, 641, 600 och 400 CSS-pixlar.
 
+De kompletterande layouttesterna kontrollerar de ramlösa kontrollernas
+tangentbordsfokus samt oförändrat läge för rubrik och nedre knappgrupp när
+meddelanden visas och stängs. Meny-/meddelanderaden kontrolleras utan
+överlappning eller horisontellt överflöde vid 1000, 641, 600, 400 och 320
+CSS-pixlar, både med nedladdningsmeddelande och filfel.
+
 ## Manuell granskning
 
 - Kontrollera Arkiv-menyn, dess två skiljelinjer och grå exportkommando.
+- Kontrollera ramlöst Arkiv med pil och ramlös ← Tilbake, med synlig
+  tangentbordsfokus. Ladda ned och stäng meddelandet: rubriken ska ligga kvar
+  på samma höjd. Prova även i ett smalt fönster; meddelandet ska ligga till
+  höger om Arkiv utan överlappning och hela texten ska gå att läsa.
 - Prova mus, Enter, blanksteg, pilar, Home, End, Escape, Tab och klick utanför.
 - Kontrollera att knapparnas namn är oförändrade och att Vis resultat slutar
   vid uppgiftsramens högra kant även när fönstret görs smalare.

@@ -77,7 +77,7 @@ export function ArchiveMenu(props: ArchiveMenuProps) {
           event.preventDefault();
           setExpanded(true);
         }
-      }}>Arkiv</button>
+      }}>Arkiv<span className="archive-chevron" aria-hidden="true" /></button>
     {expanded && <div ref={menu} id="archive-menu" className="archive-menu" role="menu" aria-label="Arkiv" onKeyDown={navigate}>
       <div role="group" aria-label="Registrering">
         <button type="button" role="menuitem" tabIndex={-1} onClick={() => run(props.newRegistration)}>Ny</button>

@@ -33,7 +33,7 @@ test('the page renders Arkiv and one dismissible notice, including after editing
   for (const edited of [false, true]) {
     if (edited) { w.edit({ ...w.getSnapshot().current, name: 'Edited' }); files.state = w.getSnapshot() }
     const html = renderToStaticMarkup(React.createElement(Page))
-    assert.equal((html.match(/>Arkiv<\/button>/g) || []).length, 1)
+    assert.equal((html.match(/>Arkiv<span class="archive-chevron" aria-hidden="true"><\/span><\/button>/g) || []).length, 1)
     assert.doesNotMatch(html, />(?:Ny|Åpne…|Last ned…)<\/button>/)
     assert.doesNotMatch(html, />Lagre(?: som)?…<\/button>/)
     assert.equal((html.match(/Nedlastingen er startet/g) || []).length, 1)

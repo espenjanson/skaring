@@ -63,14 +63,18 @@ export default function Page() {
     {/* Keep the form and file input mounted so view changes preserve their state. */}
     <div hidden={view !== "registration"}>
     <div className="window-caption">{registrationCaption(files.state)}</div>
+    <div className="menu-message-row">
     <ArchiveMenu busy={busy} newRegistration={files.newRegistration} open={files.open} download={files.download} showResult={showResult} />
-    <input ref={files.input} type="file" hidden aria-label="Velg registreringsfil" onChange={files.selected} />
+    <div className="header-messages" role="region" aria-label="Meldinger" tabIndex={files.message || phase.kind === "reading" || phase.kind === "choose-file" ? 0 : undefined}>
     {files.message && <div className={`file-feedback${files.message.kind === "error" ? " file-error" : ""}`} role={files.message.kind === "error" ? "alert" : "status"}><span>{files.message.text}</span><button type="button" onClick={files.dismissMessage}>Lukk melding</button></div>}
     {(phase.kind === "reading" || phase.kind === "choose-file") && <div className="file-feedback" role="status">
       <span>{phase.kind === "reading" ? "Leser fil …" : "Velg en fil i filvelgeren."}</span>
       {phase.kind === "choose-file" && <button type="button" onClick={files.chooseFile}>Velg fil</button>}
       <button type="button" onClick={() => files.cancel(phase.token)}>Avbryt åpning</button>
     </div>}
+    </div>
+    </div>
+    <input ref={files.input} type="file" hidden aria-label="Velg registreringsfil" onChange={files.selected} />
     <div className="registration-content">
       <h1>Skåring av motoriske oppgaver i NUBU 4-16</h1>
       <form autoComplete="off" onSubmit={event => event.preventDefault()}>
