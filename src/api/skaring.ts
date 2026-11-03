@@ -6,9 +6,11 @@
 // and then, import and use in TypeScript code: [It is commented out because it creates an error.]
 // import { saveAs } from 'file-saver';
 
-// fs is needed for file reading/writing.
-import * as fs from "fs";
-//
+/** Only the unused legacy file methods need host-provided synchronous file access. */
+export interface LegacyFileAccess {
+  writeFileSync(path: string, content: string, encoding: "utf8"): void;
+  readFileSync(path: string, encoding: "utf8"): string;
+}
 
 import type { Registration } from "../domain/registration";
 import { dateAge, manualAgeError } from "../domain/dateAge";
@@ -83,7 +85,7 @@ export class Skaring {
   // a calculation variable that is filled from dynamic data.
   //   gRawItemScoreString: string;
 
-  constructor() {
+  constructor(private readonly legacyFileAccess?: LegacyFileAccess) {
     // Global variables that represent dynamic data / user-inputted and user-manipulated
     // variables. These are implemented as global variables in the current transition/
     // intermediate version, but must be changed to represent actual dynamic data
@@ -2341,7 +2343,8 @@ export class Skaring {
       // HARALD: In the translation, it was noted: "We're using the synchronous versions of the file reading/writing functions (readFileSync and writeFileSync)
       // for simplicity. However, in real-world scenarios, especially with large files or frequent IO operations, you might consider using the asynchronous
       // versions to avoid blocking the main thread." -- I don't anticipate large files or frequent IO operations, so is this an issue?
-      fs.writeFileSync(inFileName, content, "utf8");
+      if (!this.legacyFileAccess) return 0;
+      this.legacyFileAccess.writeFileSync(inFileName, content, "utf8");
       return 1; // success
     } catch (error) {
       // HARALD: The functionality in case of an error occurring (like: the file could not be created, or not written to) should be to return 0 without
@@ -2355,7 +2358,8 @@ export class Skaring {
   readNUBUFile(inFileName: string): number {
     // Writes to a file. See the previous function for file format definition.
     try {
-      const content: string = fs.readFileSync(inFileName, "utf8");
+      if (!this.legacyFileAccess) return 0;
+      const content: string = this.legacyFileAccess.readFileSync(inFileName, "utf8");
       const lines = content.split("\n");
       // HARALD: See previous function for a note re. text encoding (UTF-8 vs. Windows/ANSI), As above, I see below that the expected coding of the file to read
       // is set to "utf8". Will this create problems with compatability with previous Windows-created files (encoded Windows/ANSI), and/or if users move files

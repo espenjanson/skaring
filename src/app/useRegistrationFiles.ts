@@ -11,7 +11,7 @@ import { DOWNLOAD_NOTICE, workflowMessage, updateFileMessage } from "../file/fil
 import type { FileMessage } from "../file/fileMessages";
 
 /** React publishes workflow snapshots; it never maintains a second reference or dirty flag. */
-export function useRegistrationFiles(onAccepted: () => void) {
+export function useRegistrationFiles(onAccepted: (kind: "opened" | "saved" | "new" | "cleared") => void) {
   const workflow = useRef<FileWorkflow | null>(null);
   const actions = useRef<BrowserFileActions | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -63,7 +63,7 @@ export function useRegistrationFiles(onAccepted: () => void) {
     if (outcome.kind === "saved") showMessage("notice", DOWNLOAD_NOTICE);
     if (outcome.kind === "new") setMessage(null);
     if (outcome.kind === "cleared") setMessage(previous => updateFileMessage(previous, { kind: "edit" }));
-    if (["opened", "saved", "new", "cleared"].includes(outcome.kind)) onAccepted();
+    if (outcome.kind === "opened" || outcome.kind === "saved" || outcome.kind === "new" || outcome.kind === "cleared") onAccepted(outcome.kind);
   }
 
   function edit(update: (data: Registration) => Registration) {

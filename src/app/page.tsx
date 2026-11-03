@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArchiveMenu } from "../components/ArchiveMenu"
 import { ResultView } from "../components/ResultView"
+import { initialResultSettings } from "../domain/results"
 import { itemLabels, singleLine, isItemCharacter } from "../domain/registration"
 import { FileDialogs } from "../components/FileDialogs"
 import { useRegistrationFiles } from "./useRegistrationFiles"
@@ -14,7 +15,14 @@ import { DateField, dateAge, editRegistrationDate, finishRegistrationDate, finis
 export default function Page() {
   const [checked, setChecked] = useState({ birthDate: false, testDate: false, age: false, pair: false })
   const resetChecked = useCallback(() => setChecked({ birthDate: false, testDate: false, age: false, pair: false }), [])
-  const files = useRegistrationFiles(resetChecked)
+  const [resultSettings, setResultSettings] = useState(initialResultSettings)
+  const onAccepted = useCallback((kind: "opened" | "saved" | "new" | "cleared") => {
+    resetChecked()
+    if (kind !== "saved") {
+      setResultSettings(current => ({ ...current, areas: initialResultSettings().areas }))
+    }
+  }, [resetChecked])
+  const files = useRegistrationFiles(onAccepted)
   const data = files.state?.current
   const setData = files.edit
   const dirty = files.state?.status === "Ulagrede endringer"
@@ -113,10 +121,10 @@ export default function Page() {
         </fieldset>
       </form>
       <p className="change-status" role="status">{files.state.status}</p>
-      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M. Resultatvisning kommer i neste etappe.</p>
+      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M.</p>
     </div>
     </div>
-    {view === "result" && <ResultView back={() => setView("registration")} />}
+    {view === "result" && <ResultView back={() => setView("registration")} registration={data} settings={resultSettings} onSettingsChange={setResultSettings} />}
     <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} unsavedChosen={files.unsavedChosen} clearChosen={files.clearChosen} />
   </main>
 }

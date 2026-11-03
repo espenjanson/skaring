@@ -2,22 +2,11 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const ts = require('typescript')
 const references = require('./fixtures/calculationReferences.json')
 const { dateAge } = require('./helpers/loadTypeScript.cjs').loadTypeScript('domain/dateAge.ts')
 
-// The legacy class imports fs for unrelated file methods. No file methods run here.
-const source = fs.readFileSync(path.join(__dirname, '../src/api/skaring.ts'), 'utf8')
-const compiled = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 },
-}).outputText
-const loaded = { exports: {} }
-new Function('exports', 'module', 'require', compiled)(loaded.exports, loaded, name => {
-  if (name === '../domain/dateAge') return require('./helpers/loadTypeScript.cjs').loadTypeScript('domain/dateAge.ts')
-  assert.equal(name, 'fs')
-  return { readFileSync() { throw new Error('Unexpected legacy file access') }, writeFileSync() { throw new Error('Unexpected legacy file access') } }
-})
-const { Skaring } = loaded.exports
+// The calculation class now loads through the shared loader without Node built-ins.
+const { Skaring } = require('./helpers/loadTypeScript.cjs').loadTypeScript('api/skaring.ts')
 const allAreas = [...'ABCDE']
 const registration = text => ({ items: [...text.padEnd(50, '*')] })
 const calculate = (engine, data, areas = allAreas) => engine.calculateRegistration({ ...data, age: data.age ?? data.displayAge, items: [...data.items] }, areas)
