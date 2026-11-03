@@ -136,16 +136,9 @@ export class Skaring {
       [1.99, 2.64, 3.05],
       [2.24, 2.92, 3.77],
     ];
-    this.gItemLabels = Array("ABCDE".length).reduce(
-      (accumulator, currLetter) => {
-        accumulator = [
-          ...accumulator,
-          ...Array(10)
-            .fill(0)
-            .map((_, numberIndex) => currLetter + (numberIndex + 1).toString()),
-        ];
-      },
-      []
+    this.gItemLabels = Array.from(
+      { length: 50 },
+      (_, index) => `${"ABCDE"[Math.floor(index / 10)]}${index % 10 + 1}`
     );
     this.gModelPercentiles = [
       [-4.2, 0],
@@ -222,7 +215,8 @@ export class Skaring {
     this.rectangleGraph = { x1: 1692, y1: 8262, x2: 2400, y2: 13977 };
     // legacyRectangle are the bounds (vertices) of the usable drawing canvas (excluding margins) in legacy units.
     // It is used for conversion to new vertices using graphicBounds as reference:
-    this.legacyRectangle = { x1: 516, y1: 132, x2: 9570, y2: 14790 };
+    // The full legacy canvas starts at 15, confirmed against the object inventory and A4 references.
+    this.legacyRectangle = { x1: 15, y1: 132, x2: 9570, y2: 14790 };
 
     // Global variables and constants for Rasch-measure calculations and error handling
     this.gResult = 0;
@@ -402,10 +396,10 @@ export class Skaring {
     );
 
     output.push(
-      this.LText("========================", strlen[0]) +
-        this.RText("========================", strlen[1] - 1) +
-        this.RText("========================", strlen[2] - 1) +
-        this.RText("========================", strlen[3] - 1) +
+      this.LText("========================", strlen[0]) + " " +
+        this.RText("========================", strlen[1] - 1) + " " +
+        this.RText("========================", strlen[2] - 1) + " " +
+        this.RText("========================", strlen[3] - 1) + " " +
         this.RText("========================", strlen[4] - 1)
     );
 
@@ -497,7 +491,7 @@ export class Skaring {
     y1: number;
     x2: number;
     y2: number;
-  }): any {
+  }): { x1: number; y1: number; x2: number; y2: number } {
     const outx1 =
       this.graphicBounds.x1 +
       ((vertices.x1 - this.legacyRectangle.x1) /
@@ -2155,7 +2149,8 @@ export class Skaring {
           maxPU,
           minPU
         ),
-        x2: rightPU,
+        // The original line spans the item columns, not just the age scale.
+        x2: 8460,
         y2: this.YPUFromMeasure(
           this.gMeasure,
           minMeasure,
@@ -2215,30 +2210,21 @@ export class Skaring {
 
     let vOutput: string = "";
 
-    switch (this.gUseItemSubset) {
-      case "A":
-        vOutput +=
-          "================ Beregnet bare ut fra A-oppgaver ================\n\n";
-        break;
-      case "B":
-        vOutput +=
-          "================ Beregnet bare ut fra B-oppgaver ================\n\n";
-        break;
-      case "C":
-        vOutput +=
-          "================ Beregnet bare ut fra C-oppgaver ================\n\n";
-        break;
-      case "D":
-        vOutput +=
-          "================ Beregnet bare ut fra D-oppgaver ================\n\n";
-        break;
-      case "E":
-        vOutput +=
-          "================ Beregnet bare ut fra E-oppgaver ================\n\n";
-        break;
-      default:
-        vOutput +=
-          "=================================================================\n";
+    const selectedAreas = "ABCDE".split("").filter((area) =>
+      this.gUseItemSubset === "All" || this.gUseItemSubset.includes(area)
+    );
+    if (selectedAreas.length === 5) {
+      vOutput += "=".repeat(65) + "\n";
+    } else {
+      const lastArea = selectedAreas[selectedAreas.length - 1];
+      const areaText = selectedAreas.length === 1
+        ? `${lastArea}-oppgaver`
+        : selectedAreas.slice(0, -1).map((area) => `${area}-`).join(", ") +
+          ` og ${lastArea}-oppgaver`;
+      const description = ` Beregnet ut fra ${areaText} `;
+      const left = Math.floor((65 - description.length) / 2);
+      vOutput += "=".repeat(left) + description +
+        "=".repeat(65 - left - description.length) + "\n\n";
     }
 
     vOutput +=
@@ -2281,7 +2267,8 @@ export class Skaring {
     }
 
     vOutput +=
-      "=================================================================\n" +
+      // The table supplies its own leading newline, as in OpenScript.
+      "=================================================================" +
       this.aldersgruppepersentilerFraEstimat(this.gMeasure);
 
     if (showRaschMeasure) {

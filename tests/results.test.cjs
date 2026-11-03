@@ -31,7 +31,7 @@ for (const fixture of references.cases) {
     else assert.ok(Math.abs(Number(result.rasch.standardError) - fixture.export.standardError) <= 0.0055)
     const hidden = calculateResult(data, initialResultSettings())
     assert.equal(hidden.rasch, null)
-    assert.deepEqual({ ...hidden, rasch: result.rasch }, result)
+    assert.deepEqual({ ...hidden, rasch: result.rasch, report: result.report }, result)
     assert.equal(JSON.stringify(data), before)
   })
 }

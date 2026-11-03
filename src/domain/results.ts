@@ -1,4 +1,5 @@
-import { Skaring } from "../api/skaring"
+import { ReportGraphics } from "../report/graphics"
+import type { ReportDocument } from "../report/graphics"
 import type { ItemArea, ModelPercentileResult } from "../api/skaring"
 import type { Registration } from "./registration"
 
@@ -23,6 +24,7 @@ export type ResultPresentation =
   | {
       kind: "available"
       canPrint: true
+      report: ReportDocument
       areas: readonly ItemArea[]
       validCount: number
       rawScore: number
@@ -44,7 +46,7 @@ export function calculateResult(
   settings: ResultSettings,
 ): ResultPresentation {
   // A fresh instance prevents any derived state surviving a rejected calculation.
-  const engine = new Skaring()
+  const engine = new ReportGraphics()
   const status = engine.calculateRegistration(registration, settings.areas)
   if (status !== -10000) {
     return {
@@ -57,10 +59,16 @@ export function calculateResult(
           : "Resultatet kunne ikke beregnes. Kontroller registreringen og prøv igjen.",
     }
   }
+  engine.svShowRasch = settings.showRasch
+  engine.navn_value = registration.name
+  engine.gutt_value = registration.gender === "gutt"
+  engine.jente_value = registration.gender === "jente"
+  const report = engine.buildReport(registration)
   const hasInterval = !engine.gIsMinEstimated && !engine.gIsMaxEstimated
   return {
     kind: "available",
     canPrint: true,
+    report,
     areas: resultAreas.filter(area => settings.areas.includes(area)),
     validCount: engine.gNValid,
     rawScore: [...engine.gRawItemScoreString].reduce(

@@ -33,7 +33,11 @@ function expectError(bytes, code, field) {
 
 const fixturesPath = path.join(__dirname, '../docs/reference-tests/datafiler')
 const fixtureNames = fs.readdirSync(fixturesPath).filter(name => name.endsWith('.~Z4')).sort()
-test('reference file coverage includes all eleven files', () => assert.equal(fixtureNames.length, 11))
+test('reference file coverage includes the documented baseline and any additional files', () => {
+  const baseline = require('./fixtures/calculationReferences.json').cases
+  assert.equal(baseline.length, 11)
+  for (const fixture of baseline) assert.ok(fixtureNames.includes(path.basename(fixture.registrationSource)))
+})
 for (const name of fixtureNames) {
   test(`reference file is byte-identical after reading and writing: ${name}`, () => {
     const bytes = fs.readFileSync(path.join(fixturesPath, name))

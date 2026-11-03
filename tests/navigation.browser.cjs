@@ -38,7 +38,7 @@ async function snapshot(page) {
 async function roundTrip(page, viaMenu = false) {
   if (viaMenu) await command(page, 'Vis resultat')
   else await page.getByRole('button', { name: 'Vis resultat', exact: true }).click()
-  await page.getByRole('heading', { name: 'Resultat av motoriske oppgaver i NUBU 4-16', exact: true }).waitFor()
+  await page.getByRole('heading', { name: 'Vis resultat', exact: true }).waitFor()
   assert.equal(await page.getByRole('button', { name: 'Arkiv', exact: true }).count(), 0)
   assert.equal(await page.locator('.result-presentation').count(), 1)
   assert.equal(await page.getByRole('checkbox').count(), 6)
@@ -287,18 +287,31 @@ test('the shared menu and message row keeps the heading stable and avoids overla
 const insufficient = 'Resultat kan bare vises når minst tre oppgaver er gjennomført innenfor de valgte områdene.'
 async function showResults(page) {
   await page.getByRole('button', { name: 'Vis resultat', exact: true }).click()
-  await page.getByRole('heading', { name: 'Resultat av motoriske oppgaver i NUBU 4-16', exact: true }).waitFor()
+  await page.getByRole('heading', { name: 'Vis resultat', exact: true }).waitFor()
 }
 async function expectOnlyMessage(page, message) {
   const report = page.locator('.result-presentation')
   await report.getByText(message, { exact: true }).waitFor()
   assert.deepEqual(await report.evaluate(node => ({ count: node.children.length, text: node.textContent })), { count: 1, text: message })
   assert.equal(await page.locator('.result-view').getAttribute('data-printable'), 'false')
-  assert.equal(await page.getByRole('checkbox', { name: 'Område A', exact: true }).isEnabled(), true)
+  assert.equal(await page.getByRole('checkbox', { name: 'A-oppgaver', exact: true }).isEnabled(), true)
 }
 async function expectValue(page, label, value) {
-  const cell = page.locator('.result-values').getByText(label, { exact: true }).locator('xpath=following-sibling::dd[1]')
-  await cell.getByText(String(value), { exact: true }).waitFor()
+  await page.waitForFunction(({ label, value }) => {
+    const sheet = document.querySelector('.report-sheet')
+    if (!sheet) return false
+    const scores = [...sheet.querySelectorAll('[data-object^="item_"]')]
+      .map(node => /\(([012])\)/.exec(node.textContent))
+      .filter(Boolean).map(match => Number(match[1]))
+    if (label === 'Gjennomførte oppgaver') return scores.length === Number(value)
+    if (label === 'Poengsum') return scores.reduce((sum, score) => sum + score, 0) === Number(value)
+    if (label === 'Valgte områder') {
+      return [...document.querySelectorAll('.result-area-controls input:checked')]
+        .map(node => node.closest('label').textContent.trim()[0]).join(', ') === value
+    }
+    const text = sheet.querySelector('[data-object="output"]').textContent
+    return text.split('\n').some(line => line.includes(label.includes('Rasch') ? '(Rasch-skår)' : '(Aldersekvivalent)') && line.trim().endsWith(value))
+  }, { label, value: String(value) })
 }
 
 test('result controls recover from insufficient data and no selected areas without stale values', async t => {
@@ -315,19 +328,19 @@ test('result controls recover from insufficient data and no selected areas witho
   await showResults(page)
   await expectValue(page, 'Gjennomførte oppgaver', 3)
   await expectValue(page, 'Poengsum', 3)
-  assert.equal(await page.getByText('Samleskår (Rasch-skår)', { exact: true }).count(), 0)
+  assert.equal(await page.locator('[data-object="output"]').filter({ hasText: 'Samleskår (Rasch-skår)' }).count(), 0)
   await page.getByRole('checkbox', { name: 'Vis Rasch-skår', exact: true }).check()
-  await page.getByText('Samleskår (Rasch-skår)', { exact: true }).waitFor()
+  await page.locator('[data-object="output"]').filter({ hasText: 'Samleskår (Rasch-skår)' }).waitFor()
   await page.getByRole('checkbox', { name: 'Vis Rasch-skår', exact: true }).uncheck()
-  assert.equal(await page.getByText('Samleskår (Rasch-skår)', { exact: true }).count(), 0)
-  await page.getByRole('checkbox', { name: 'Område A', exact: true }).uncheck()
+  assert.equal(await page.locator('[data-object="output"]').filter({ hasText: 'Samleskår (Rasch-skår)' }).count(), 0)
+  await page.getByRole('checkbox', { name: 'A-oppgaver', exact: true }).uncheck()
   await expectOnlyMessage(page, insufficient)
-  for (const area of 'BCDE') await page.getByRole('checkbox', { name: `Område ${area}`, exact: true }).uncheck()
+  for (const area of 'BCDE') await page.getByRole('checkbox', { name: `${area}-oppgaver`, exact: true }).uncheck()
   await expectOnlyMessage(page, 'Velg minst ett område for å vise resultat.')
-  await page.getByRole('checkbox', { name: 'Område A', exact: true }).check()
+  await page.getByRole('checkbox', { name: 'A-oppgaver', exact: true }).check()
   await expectValue(page, 'Gjennomførte oppgaver', 3)
   // Empty B remains a permissible part of the selected combination.
-  await page.getByRole('checkbox', { name: 'Område B', exact: true }).check()
+  await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).check()
   await expectValue(page, 'Valgte områder', 'A, B')
   await expectValue(page, 'Gjennomførte oppgaver', 3)
   if (process.env.NUBU_SCREENSHOT_DIR) {
@@ -347,7 +360,7 @@ test('result controls recover from insufficient data and no selected areas witho
   await page.getByRole('textbox', { name: 'A3', exact: true }).fill('')
   await command(page, 'Vis resultat')
   await expectOnlyMessage(page, insufficient)
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), true)
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), true)
 })
 
 test('Rasch persists while Ny, Åpne and Tøm formular reset only the area selection', async t => {
@@ -359,7 +372,7 @@ test('Rasch persists while Ny, Åpne and Tøm formular reset only the area selec
   await expectValue(page, 'Samleskår (aldersekvivalent)', '6:10')
   await page.getByRole('checkbox', { name: 'Vis Rasch-skår', exact: true }).check()
   await expectValue(page, 'Samleskår (Rasch-skår)', '-0.15')
-  for (const area of 'BCDE') await page.getByRole('checkbox', { name: `Område ${area}`, exact: true }).uncheck()
+  for (const area of 'BCDE') await page.getByRole('checkbox', { name: `${area}-oppgaver`, exact: true }).uncheck()
   await expectValue(page, 'Gjennomførte oppgaver', 3)
   await expectValue(page, 'Samleskår (Rasch-skår)', '-0.40')
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
@@ -373,31 +386,31 @@ test('Rasch persists while Ny, Åpne and Tøm formular reset only the area selec
   await download
   await showResults(page)
   await expectValue(page, 'Samleskår (Rasch-skår)', '-0.40')
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), false)
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), false)
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   await command(page, 'Ny')
   await page.getByText('Ingen ulagrede endringer', { exact: true }).waitFor()
   await showResults(page)
   await expectOnlyMessage(page, insufficient)
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), true)
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), true)
   assert.equal(await page.getByRole('checkbox', { name: 'Vis Rasch-skår', exact: true }).isChecked(), true)
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   await openReference(page)
   await showResults(page)
   await expectValue(page, 'Samleskår (Rasch-skår)', '-0.15')
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), true)
-  await page.getByRole('checkbox', { name: 'Område B', exact: true }).uncheck()
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), true)
+  await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).uncheck()
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   await page.getByRole('textbox', { name: 'Navn:', exact: true }).fill('Fiktiv endring')
   await page.getByRole('button', { name: 'Tøm formular', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Avbryt', exact: true }).click()
   await showResults(page)
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), false)
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), false)
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   await page.getByRole('button', { name: 'Tøm formular', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click()
   await showResults(page)
   await expectOnlyMessage(page, insufficient)
-  assert.equal(await page.getByRole('checkbox', { name: 'Område B', exact: true }).isChecked(), true)
+  assert.equal(await page.getByRole('checkbox', { name: 'B-oppgaver', exact: true }).isChecked(), true)
   assert.equal(await page.getByRole('checkbox', { name: 'Vis Rasch-skår', exact: true }).isChecked(), true)
 })

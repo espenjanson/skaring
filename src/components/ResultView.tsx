@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from "react";
 
+import { ReportPage } from "./ReportPage";
 import type { Registration } from "../domain/registration";
 import { calculateResult, resultAreas } from "../domain/results";
 import type { ResultSettings } from "../domain/results";
 
-/** Temporary control presentation; all numerical rules remain outside React. */
+/** Report controls stay separate from the printable A4 document. */
 export function ResultView({ back, registration, settings, onSettingsChange }: {
   back: () => void;
   registration: Registration;
@@ -25,9 +26,10 @@ export function ResultView({ back, registration, settings, onSettingsChange }: {
         </svg>
         Tilbake
       </button>
-      <h1 id="result-heading" ref={heading} tabIndex={-1}>Resultat av motoriske oppgaver i NUBU 4-16</h1>
+      <h1 id="result-heading" ref={heading} tabIndex={-1}>Vis resultat</h1>
+      <div className="result-options">
       <fieldset className="result-area-controls">
-        <legend>Oppgaver som inngår i resultatet</legend>
+        <legend>Resultatet beregnes ut fra:</legend>
         {resultAreas.map(area => <label key={area}>
           <input type="checkbox" checked={settings.areas.includes(area)} onChange={event => onSettingsChange({
             ...settings,
@@ -35,32 +37,17 @@ export function ResultView({ back, registration, settings, onSettingsChange }: {
               ? resultAreas.filter(value => value === area || settings.areas.includes(value))
               : settings.areas.filter(value => value !== area),
           })} />
-          Område {area}
+          {area}-oppgaver
         </label>)}
       </fieldset>
       <label className="result-rasch-control"><input type="checkbox" checked={settings.showRasch} onChange={event => onSettingsChange({ ...settings, showRasch: event.target.checked })} />Vis Rasch-skår</label>
+      </div>
+      <button type="button" className="print-result" disabled={!result.canPrint} onClick={() => { if (result.canPrint) window.print(); }}>Skriv ut…</button>
     </div>
     <div className="result-presentation" aria-live="polite" aria-atomic="true">
-      {result.kind === "unavailable" ? <p role="status">{result.message}</p> : <>
-        <h2>Midlertidig resultatoversikt</h2>
-        <dl className="result-values">
-          <dt>Valgte områder</dt><dd>{result.areas.join(", ")}</dd>
-          <dt>Gjennomførte oppgaver</dt><dd>{result.validCount}</dd>
-          <dt>Poengsum</dt><dd>{result.rawScore}</dd>
-          <dt>Alder</dt><dd>{result.displayAge || "Ikke oppgitt"}</dd>
-          <dt>Samleskår (aldersekvivalent)</dt><dd>{result.ageEquivalent}</dd>
-          <dt>95% konfidensintervall</dt><dd>{result.confidenceInterval.kind === "available"
-            ? `${result.confidenceInterval.lower} – ${result.confidenceInterval.upper}`
-            : result.confidenceInterval.message}</dd>
-          <dt>Modellbasert persentil</dt><dd>{result.modelPercentile.kind === "available"
-            ? `${result.modelPercentile.value}. persentilen`
-            : "Persentil basert på statistisk modell kan ikke beregnes."}</dd>
-          {result.rasch && <>
-            <dt>Samleskår (Rasch-skår)</dt><dd>{result.rasch.estimate}</dd>
-            <dt>Standardfeil</dt><dd>{result.rasch.standardError ?? "Standardfeil for skåren kan ikke beregnes."}</dd>
-          </>}
-        </dl>
-      </>}
+      {result.kind === "unavailable"
+        ? <div className="report-unavailable"><p role="status">{result.message}</p></div>
+        : <ReportPage report={result.report} />}
     </div>
   </section>;
 }

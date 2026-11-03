@@ -662,7 +662,7 @@
       },
       "reports": [
         {
-          "source": "docs/reference-tests/rapporter/Test208Alle.pdf",
+          "source": "docs/reference-tests/rapporter/Test208AlleRasch.pdf",
           "page": 1,
           "areas": [
             "A",
@@ -1295,7 +1295,7 @@
     "docs/reference-tests/rapporter/Test206Alle.pdf": "f6f95106a9e3ab4bf481d84effb3095d77a74e8c614ee12037fd94bffa2f790b",
     "docs/reference-tests/rapporter/Test206C.pdf": "3eb902da8959fb20fe900ade424d9bed068c307f17514c3dac8fabd5714ee3e6",
     "docs/reference-tests/rapporter/Test207Alle.pdf": "6beaede3a25845d7d56fdf0a1aa3e8e4731538f97f935c87974d71c97c6d75c5",
-    "docs/reference-tests/rapporter/Test208Alle.pdf": "b085a4d95152eb2f76ca03704cbe3547489478b2ece55f09ba83e833d73f03ba",
+    "docs/reference-tests/rapporter/Test208AlleRasch.pdf": "b085a4d95152eb2f76ca03704cbe3547489478b2ece55f09ba83e833d73f03ba",
     "docs/reference-tests/rapporter/Test208C.pdf": "955ffbd532df0eae1ffe97a777ce1bca3abe4eed9fba1266c07ffd5fbbbc8c3f",
     "docs/reference-tests/rapporter/Test209Alle.pdf": "92b81ec1d09b882f66818fb281891cc254e2aa20473757aececafa1ad26901f8",
     "docs/reference-tests/rapporter/Test301_100A.pdf": "98a770d18350b0980698e6afb790af5de434ace7c7a585f1a4cd2b0c6a62eff1",

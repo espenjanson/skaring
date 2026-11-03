@@ -56,20 +56,24 @@ button:disabled { color: #777; }
 .archive-menu [role="separator"] { border-top: 1px solid #aaa; margin: 4px 2px; }
 .result-view { padding: 22px 24px; }
 .result-controls { margin-bottom: 20px; background: #f0f0f0; }
-.result-controls h1 { white-space: normal; margin: 16px 0; }
-.result-area-controls { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0 0 12px; padding: 10px; border: 1px solid #aaa; }
+.result-controls h1 { font-size: 15px; font-weight: 600; white-space: normal; margin: 12px 0; }
+.result-options { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.result-area-controls { display: flex; flex-wrap: wrap; gap: 8px 8px; margin: 0; padding: 10px; border: 1px solid #aaa; min-width: 0; }
 .result-area-controls label, .result-rasch-control { display: inline-flex; align-items: center; gap: 5px; }
 .result-controls input[type="checkbox"] { width: 14px; height: 14px; margin: 0; }
-.result-presentation { background: #fff; min-height: 220px; padding: 20px; }
-.result-presentation h2 { font-size: 18px; margin: 0 0 20px; }
-.result-presentation p { line-height: 1.5; margin: 0; }
-.result-values { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 20px; line-height: 1.5; margin: 0; }
-.result-values dt { font-weight: 600; }
-.result-values dd { margin: 0; overflow-wrap: anywhere; }
+.print-result { display: block; margin-top: 14px; }
+.result-presentation { margin: 0; padding: 0; }
+.report-sheet { display: block; width: 100%; height: auto; aspect-ratio: 210 / 297; background: white; }
+.report-field { box-sizing: border-box; }
+.report-unavailable { aspect-ratio: 210 / 297; background: white; padding: 9.5238095%; }
+.report-unavailable p { line-height: 1.5; margin: 0; }
+@page { size: A4; margin: 0; }
 @media print {
-  .result-controls, .result-view[data-printable="false"] { display: none; }
-  .result-view { padding: 0; }
-  .result-view .result-presentation { min-height: 0; }
+  html, body { margin: 0; padding: 0; width: 210mm; background: white; }
+  .registration-window { width: 210mm; max-width: none; min-height: 0; background: white; }
+  .result-controls, .result-view[data-printable="false"], .file-dialog { display: none !important; }
+  .result-view, .result-presentation { margin: 0; padding: 0; }
+  .report-sheet { width: 210mm; height: 297mm; max-width: none; break-inside: avoid; }
 }
 .file-feedback { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; line-height: 1.5; }
 .file-feedback + .file-feedback { margin-top: 4px; }
