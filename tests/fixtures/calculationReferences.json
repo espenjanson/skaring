@@ -1,0 +1,1308 @@
+{
+  "schemaVersion": 1,
+  "precision": {
+    "exportNumeric": "rounded to 3 decimal places; underlying exact values unavailable",
+    "exportFlags": "exact",
+    "pdfNumeric": "rounded to 2 decimal places",
+    "presentation": "exact displayed text; not an unrounded estimate",
+    "missing": "null with status missing",
+    "notComputable": "explicit status; extreme-case export SE remains a numeric calculation value"
+  },
+  "cases": [
+    {
+      "id": "201",
+      "registration": {
+        "name": "Karen",
+        "gender": "false true",
+        "birthDate": "22.07.2016",
+        "testDate": "12.10.2026",
+        "displayAge": "10:2",
+        "note": "Venstrehendt",
+        "note2": "Testingen utført i to sesjoner AB og DE",
+        "items": "d**210*******2*110***************202*********10***"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test201_100.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 2,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 2.323,
+        "scoreString": "d9921099999992911099999999999999920299999999910999",
+        "rasch": 0.199,
+        "standardError": 0.417,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "7:6",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "6:1",
+          "upper": "9:3"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 4
+        },
+        "validCount": 12,
+        "rawScore": 12
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Resultat201A.pdf",
+          "page": 1,
+          "areas": [
+            "A"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "6:5",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "4:4",
+            "upper": "9:5"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 1
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 3,
+          "rawScore": 3
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Resultat201Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "7:6",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "6:1",
+            "upper": "9:3"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 4
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            3,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 12,
+          "rawScore": 12
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Resultat201AlleRasch.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "7:6",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "6:1",
+            "upper": "9:3"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 4
+          },
+          "rasch": {
+            "status": "available",
+            "value": 0.2
+          },
+          "standardError": {
+            "status": "available",
+            "value": 0.42
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            3,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 12,
+          "rawScore": 12
+        }
+      ]
+    },
+    {
+      "id": "202",
+      "registration": {
+        "name": "Anne Karine",
+        "gender": "false true",
+        "birthDate": "",
+        "testDate": "14.10.2026",
+        "displayAge": "10:5",
+        "note": "Jeg tror det var hun",
+        "note2": "Og jeg tror det var i dag jeg testet.",
+        "items": "****2210*******21100***2100******22100******210***"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test202.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 3,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 2.347,
+        "scoreString": "99992210999999921100999210099999922100999999210999",
+        "rasch": 0.394,
+        "standardError": 0.329,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "7:10",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "6:8",
+          "upper": "9:3"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 6
+        },
+        "validCount": 21,
+        "rawScore": 20
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test202A.pdf",
+          "page": 1,
+          "areas": [
+            "A"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "8:8",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "6:0",
+            "upper": "12:6"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 18
+          },
+          "rasch": {
+            "status": "available",
+            "value": 0.79
+          },
+          "standardError": {
+            "status": "available",
+            "value": 0.73
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            4,
+            4,
+            3,
+            2,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 4,
+          "rawScore": 5
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Test202Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "7:10",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "6:8",
+            "upper": "9:3"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 6
+          },
+          "rasch": {
+            "status": "available",
+            "value": 0.39
+          },
+          "standardError": {
+            "status": "available",
+            "value": 0.33
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            3,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 21,
+          "rawScore": 20
+        }
+      ]
+    },
+    {
+      "id": "205",
+      "registration": {
+        "name": "Anne Inger",
+        "gender": "false true",
+        "birthDate": "",
+        "testDate": "",
+        "displayAge": "17:3",
+        "note": "",
+        "note2": "",
+        "items": "*******222********21********21********22********12"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test205.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 4,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 2.85,
+        "scoreString": "99999992229999999921999999992199999999229999999912",
+        "rasch": 3.511,
+        "standardError": 0.602,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "17:5",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "12:11",
+          "upper": "Høyere enn 18:0"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 54
+        },
+        "validCount": 11,
+        "rawScore": 19
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test205A.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "scored items A–E; filename A is not a subset marker",
+          "ageEquivalent": "17:5",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "12:11",
+            "upper": "Høyere enn 18:0"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 54
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3
+          ],
+          "validCount": 11,
+          "rawScore": 19
+        }
+      ]
+    },
+    {
+      "id": "206",
+      "registration": {
+        "name": "Gretchen",
+        "gender": "false true",
+        "birthDate": "",
+        "testDate": "16.10.2026",
+        "displayAge": "5:2",
+        "note": "Glemte oppgave C1",
+        "note2": "Barnet gir lett opp, kanskje kan mer enn det kunne vise",
+        "items": "00********00*********000******0*********0*********"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test206.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 5,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 1.65,
+        "scoreString": "00999999990099999999900099999909999999990999999999",
+        "rasch": -5.899,
+        "standardError": 1.831,
+        "minEstimated": true,
+        "maxEstimated": false,
+        "ageEquivalent": "Lavere enn 3:6",
+        "confidenceInterval": {
+          "status": "not-computable",
+          "lower": null,
+          "upper": null
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 0
+        },
+        "validCount": 9,
+        "rawScore": 0
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test206Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "Lavere enn 3:6",
+          "confidenceInterval": {
+            "status": "not-computable",
+            "lower": null,
+            "upper": null
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 0
+          },
+          "rasch": {
+            "status": "available",
+            "value": -5.9
+          },
+          "standardError": {
+            "status": "not-computable",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 9,
+          "rawScore": 0
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Test206C.pdf",
+          "page": 1,
+          "areas": [
+            "C"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "Lavere enn 3:6",
+          "confidenceInterval": {
+            "status": "not-computable",
+            "lower": null,
+            "upper": null
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 1
+          },
+          "rasch": {
+            "status": "available",
+            "value": -4.61
+          },
+          "standardError": {
+            "status": "not-computable",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 3,
+          "rawScore": 0
+        }
+      ]
+    },
+    {
+      "id": "207",
+      "registration": {
+        "name": "Oddvar",
+        "gender": "true false",
+        "birthDate": "",
+        "testDate": "",
+        "displayAge": "17:8",
+        "note": "",
+        "note2": "",
+        "items": "********22*******2*2********22*******2*2********22"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test207.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 6,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 2.874,
+        "scoreString": "99999999229999999292999999992299999992929999999922",
+        "rasch": 5.773,
+        "standardError": 1.829,
+        "minEstimated": false,
+        "maxEstimated": true,
+        "ageEquivalent": "Høyere enn 18:0",
+        "confidenceInterval": {
+          "status": "not-computable",
+          "lower": null,
+          "upper": null
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 100
+        },
+        "validCount": 10,
+        "rawScore": 20
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test207Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "Høyere enn 18:0",
+          "confidenceInterval": {
+            "status": "not-computable",
+            "lower": null,
+            "upper": null
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 100
+          },
+          "rasch": {
+            "status": "available",
+            "value": 5.77
+          },
+          "standardError": {
+            "status": "not-computable",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "validCount": 10,
+          "rawScore": 20
+        }
+      ]
+    },
+    {
+      "id": "208",
+      "registration": {
+        "name": "Lise",
+        "gender": "false true",
+        "birthDate": "",
+        "testDate": "",
+        "displayAge": "4:6",
+        "note": "Ja her kommer det også et utrolig langt notat om ei jente ",
+        "note2": "og hva skal jeg finne på å skrive mer enn som så`?",
+        "items": "********************2211000***********************"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test208.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 7,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 1.513,
+        "scoreString": "99999999999999999999221100099999999999999999999999",
+        "rasch": -1.757,
+        "standardError": 0.557,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "4:6",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "Lavere enn 3:6",
+          "upper": "6:0"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 54
+        },
+        "validCount": 7,
+        "rawScore": 6
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test208Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "4:6",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "6:0"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 54
+          },
+          "rasch": {
+            "status": "available",
+            "value": -1.76
+          },
+          "standardError": {
+            "status": "available",
+            "value": 0.56
+          },
+          "actualPercentileCategories": [
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 7,
+          "rawScore": 6
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Test208C.pdf",
+          "page": 1,
+          "areas": [
+            "C"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "4:6",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "6:0"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 54
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 7,
+          "rawScore": 6
+        }
+      ]
+    },
+    {
+      "id": "209",
+      "registration": {
+        "name": "Jens",
+        "gender": "true false",
+        "birthDate": "",
+        "testDate": "",
+        "displayAge": "",
+        "note": "Vad händer om jag skriver ett jättelångt notat på många många tecken, många flera än 80, hur kommer det att gå när jag sparar filen?",
+        "note2": "",
+        "items": "012***********************************************"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test209.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 8,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 0.0,
+        "scoreString": "01299999999999999999999999999999999999999999999999",
+        "rasch": -1.511,
+        "standardError": 0.774,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "4:10",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "Lavere enn 3:6",
+          "upper": "7:2"
+        },
+        "modelPercentile": {
+          "status": "not-computable",
+          "value": null
+        },
+        "validCount": 3,
+        "rawScore": 3
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test209Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "4:10",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "7:2"
+          },
+          "modelPercentile": {
+            "status": "not-computable",
+            "value": null
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 3,
+          "rawScore": 3
+        }
+      ]
+    },
+    {
+      "id": "301",
+      "registration": {
+        "name": "Karen",
+        "gender": "false true",
+        "birthDate": "",
+        "testDate": "14.10.2026",
+        "displayAge": "10:2",
+        "note": "Venstrehendt",
+        "note2": "Testet i to omganger AB og DE",
+        "items": "d**210*******2*110***************200*********10***"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test301 Som i programbeskrivning v02.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 9,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 2.323,
+        "scoreString": "d9921099999992911099999999999999920099999999910999",
+        "rasch": -0.149,
+        "standardError": 0.419,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "6:10",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "5:7",
+          "upper": "8:5"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 1
+        },
+        "validCount": 12,
+        "rawScore": 10
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test301_100A.pdf",
+          "page": 1,
+          "areas": [
+            "A"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "6:5",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "4:4",
+            "upper": "9:5"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 1
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 3,
+          "rawScore": 3
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Test301_100A_Rasch.pdf",
+          "page": 1,
+          "areas": [
+            "A"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "6:5",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "4:4",
+            "upper": "9:5"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 1
+          },
+          "rasch": {
+            "status": "available",
+            "value": -0.4
+          },
+          "standardError": {
+            "status": "available",
+            "value": 0.77
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 3,
+          "rawScore": 3
+        },
+        {
+          "source": "docs/reference-tests/rapporter/Test301_100Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "6:10",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "5:7",
+            "upper": "8:5"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 1
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            4,
+            4,
+            3,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 12,
+          "rawScore": 10
+        }
+      ]
+    },
+    {
+      "id": "302",
+      "registration": {
+        "name": "Jens Petter",
+        "gender": "true false",
+        "birthDate": "16.10.2022",
+        "testDate": "16.10.2026",
+        "displayAge": "4:0",
+        "note": "Høyrehendt",
+        "note2": "Testet på 4-års-dagen sin",
+        "items": "0*********2*********110*******20******************"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test302.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 10,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 1.397,
+        "scoreString": "09999999992999999999110999999920999999999999999999",
+        "rasch": -2.551,
+        "standardError": 0.519,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "3:8",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "Lavere enn 3:6",
+          "upper": "4:10"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 35
+        },
+        "validCount": 7,
+        "rawScore": 6
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test302Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "3:8",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "4:10"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 35
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 7,
+          "rawScore": 6
+        }
+      ]
+    },
+    {
+      "id": "303",
+      "registration": {
+        "name": "Jens Petter",
+        "gender": "true false",
+        "birthDate": "16.09.2022",
+        "testDate": "16.10.2026",
+        "displayAge": "4:0",
+        "note": "Høyrehendt",
+        "note2": "Er nesten 4:1",
+        "items": "0*********2*********110*******20******************"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test303.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 11,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 1.397,
+        "scoreString": "09999999992999999999110999999920999999999999999999",
+        "rasch": -2.551,
+        "standardError": 0.519,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "3:8",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "Lavere enn 3:6",
+          "upper": "4:10"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 31
+        },
+        "validCount": 7,
+        "rawScore": 6
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test303Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "3:8",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "4:10"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 31
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 7,
+          "rawScore": 6
+        }
+      ]
+    },
+    {
+      "id": "304",
+      "registration": {
+        "name": "Jens Petter",
+        "gender": "true false",
+        "birthDate": "",
+        "testDate": "",
+        "displayAge": "4:0",
+        "note": "Høyrehendt",
+        "note2": "Har nylig fylt 4 år",
+        "items": "0*********2*********110*******20******************"
+      },
+      "registrationSource": "docs/reference-tests/datafiler/Test304.~Z4",
+      "export": {
+        "source": "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt",
+        "line": 12,
+        "areas": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "logAge": 1.397,
+        "scoreString": "09999999992999999999110999999920999999999999999999",
+        "rasch": -2.551,
+        "standardError": 0.519,
+        "minEstimated": false,
+        "maxEstimated": false,
+        "ageEquivalent": "3:8",
+        "confidenceInterval": {
+          "status": "available",
+          "lower": "Lavere enn 3:6",
+          "upper": "4:10"
+        },
+        "modelPercentile": {
+          "status": "available",
+          "value": 34
+        },
+        "validCount": 7,
+        "rawScore": 6
+      },
+      "reports": [
+        {
+          "source": "docs/reference-tests/rapporter/Test304Alle.pdf",
+          "page": 1,
+          "areas": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "selectionEvidence": "report item scores and filename",
+          "ageEquivalent": "3:8",
+          "confidenceInterval": {
+            "status": "available",
+            "lower": "Lavere enn 3:6",
+            "upper": "4:10"
+          },
+          "modelPercentile": {
+            "status": "available",
+            "value": 34
+          },
+          "rasch": {
+            "status": "missing",
+            "value": null
+          },
+          "standardError": {
+            "status": "missing",
+            "value": null
+          },
+          "actualPercentileCategories": [
+            2,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validCount": 7,
+          "rawScore": 6
+        }
+      ]
+    }
+  ],
+  "sourceSha256": {
+    "docs/reference-tests/datafiler/Test201_100.~Z4": "7faeaa81f0e9c4fd535aaccf9473e3e332736a62002c9d8ba8687c9883c7a8e1",
+    "docs/reference-tests/datafiler/Test202.~Z4": "996b6429bb0eaf97d2a9079a0081d6d437fa68a4206e9c22de8a6a055748d5c2",
+    "docs/reference-tests/datafiler/Test205.~Z4": "76834c7951ef4a5cb3fadf058ecd849a4836f44e049b1792fc784f9c53856342",
+    "docs/reference-tests/datafiler/Test206.~Z4": "dd77c935362b71163fcef52b316893ee93b340d70c7979698ee52e35f5bed814",
+    "docs/reference-tests/datafiler/Test207.~Z4": "c24f366b947d596e927c47b0c053d070bbdfeed7c0e0327be1ee27722faf2f4f",
+    "docs/reference-tests/datafiler/Test208.~Z4": "d62154389907c05702ae870f45cb7732864e734b62db1649c21c596fd504c40a",
+    "docs/reference-tests/datafiler/Test209.~Z4": "d7fe353c308ad23d299bd85e8bba788389a59f3992a7c77b416e6ba17a644f35",
+    "docs/reference-tests/datafiler/Test301 Som i programbeskrivning v02.~Z4": "f9a443c66a9be2930e60eea9122d3c2ea7f8d2fb684354071679e2e9fd226fea",
+    "docs/reference-tests/datafiler/Test302.~Z4": "91f89ed1a766bdcb0b2328ce3edf325520e03e6ba5eadd8e491819dad50e9e9d",
+    "docs/reference-tests/datafiler/Test303.~Z4": "38d0f2eaddd17d1a059a3058266a42056bf1149327c07d47f1ce83789972eafb",
+    "docs/reference-tests/datafiler/Test304.~Z4": "87d17f2ed77a5415252995f9eb70bf47f9cf4a7d8b9118109ae8c6623a5149d5",
+    "docs/reference-tests/rapporter/261103 Dataexport referensfall.txt": "582203e816fae866ba71b3141cefec9af1acb18d40ce341a1c10566384263e10",
+    "docs/reference-tests/rapporter/Resultat201A.pdf": "a142891edd2dd2d93d7f0c6c3aef324ca9594f78774fe098888698bfca8e486b",
+    "docs/reference-tests/rapporter/Resultat201Alle.pdf": "e3ea8284a41d538ef8bd51a6d46ae8317628f5ab5b699fb0418bcc5c0c33c5f0",
+    "docs/reference-tests/rapporter/Resultat201AlleRasch.pdf": "aa36deea6e54517eeb9a0b1c7526e270b7367ad4aea05f0e1877b8e1a5c844fc",
+    "docs/reference-tests/rapporter/Test202A.pdf": "df0af665947cf444255f14b1708b8612c812ce1470b41c1046d29247f5fc6993",
+    "docs/reference-tests/rapporter/Test202Alle.pdf": "c95d09d8cc7e83582d33ed49ba4716c9ad189dc4d36bb0bfa52da8fbd5974b2b",
+    "docs/reference-tests/rapporter/Test205A.pdf": "0b96197a40bcb6a29b71196806bdbdcca8348a89e39d2baf8563fdb4b4ff716d",
+    "docs/reference-tests/rapporter/Test206Alle.pdf": "f6f95106a9e3ab4bf481d84effb3095d77a74e8c614ee12037fd94bffa2f790b",
+    "docs/reference-tests/rapporter/Test206C.pdf": "3eb902da8959fb20fe900ade424d9bed068c307f17514c3dac8fabd5714ee3e6",
+    "docs/reference-tests/rapporter/Test207Alle.pdf": "6beaede3a25845d7d56fdf0a1aa3e8e4731538f97f935c87974d71c97c6d75c5",
+    "docs/reference-tests/rapporter/Test208Alle.pdf": "b085a4d95152eb2f76ca03704cbe3547489478b2ece55f09ba83e833d73f03ba",
+    "docs/reference-tests/rapporter/Test208C.pdf": "955ffbd532df0eae1ffe97a777ce1bca3abe4eed9fba1266c07ffd5fbbbc8c3f",
+    "docs/reference-tests/rapporter/Test209Alle.pdf": "92b81ec1d09b882f66818fb281891cc254e2aa20473757aececafa1ad26901f8",
+    "docs/reference-tests/rapporter/Test301_100A.pdf": "98a770d18350b0980698e6afb790af5de434ace7c7a585f1a4cd2b0c6a62eff1",
+    "docs/reference-tests/rapporter/Test301_100A_Rasch.pdf": "8ceb06e4f3d8cba7fb55f67c361163d9983be11b8594cee67337e7d2440a327c",
+    "docs/reference-tests/rapporter/Test301_100Alle.pdf": "2f7191e2622926b619003e507649ab1bd4599a380b1ff4f56f70e109edb3679a",
+    "docs/reference-tests/rapporter/Test302Alle.pdf": "d7a3cd32b1175ed7f4e455b63511b3d34e603fcb2146d5213d74bb7ceab65510",
+    "docs/reference-tests/rapporter/Test303Alle.pdf": "12ef9d91aab3566366f9a3e02ec6150173ae41763fbcd11730e54e4e679779f2",
+    "docs/reference-tests/rapporter/Test304Alle.pdf": "ba96b0e86561e2809369742ea44912868895e65b2de3f1adaf9390d246754f0e"
+  }
+}

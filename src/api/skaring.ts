@@ -10,6 +10,12 @@
 import * as fs from "fs";
 //
 
+import type { Registration } from "../domain/registration";
+
+export type ItemArea = "A" | "B" | "C" | "D" | "E";
+const ITEM_AREAS: readonly ItemArea[] = ["A", "B", "C", "D", "E"];
+const MIN_VALID_ITEMS = 3;
+
 export class Skaring {
   // SECTION "-- ***************** INITIALIZATION ************************""
 
@@ -237,102 +243,71 @@ export class Skaring {
 
   // SECTION "-- ***************** PREPARATION OF OUTPUT ************************"
 
-  prepareInputForOutput(argA: string): void {
-    const minValidItems = 3;
-    const nineString = "9999999999999999999999999999999999999999999999999999";
-    let dataString = "";
-    let ctrK = 0;
-
-    for (let ctrJ = 1; ctrJ <= 50; ctrJ++) {
-      // HARALD: HÄR HÄMTAS DET DATA.
-      // "dataString" SKALL INNEHÅLLA 50 TECKEN OCH VART OCH ETT AV TECKNEN SKALL MOTSVARA (DET FÖRSTA) GILTIGA TECKNET
-      // I MOTSVARANDE FÄLT NÄR DE TAS I ORDNINGEN a1, a2, ... a10, b1 ... b10, ... e10. OM FÄLTET INTE INNEHÅLLER
-      // NÅGOT GILTIGT TECKEN ("0", "1" ELLER "2") SKALL MOTSVARANDE TECKEN I STRÄNGEN VARA "9"
-      // I'm not sure about the equivalent of "get ("i" & ctrJ)" in your context,
-      // so I've commented it out. You might need to replace this with appropriate logic.
-      // get ("i" & ctrJ);
-      // const fieldText = (text of field (It) of page "Start");
-      // Using dummy value for fieldText for now
-      const fieldText = "9";
-
-      // HARALD: "fieldtext" I FÖLJANDE RAD BEHÖVER ÄNDRAS TILL ATT REFERERA TILL DATA:
-
-      dataString += fieldText.charAt(0) === "9" ? "9" : fieldText;
-      if (dataString.charAt(dataString.length - 1) !== "9") {
-        ctrK++;
-      }
-      if (ctrJ % 10 === 0) {
-        this.gIsValidAE[ctrJ / 10] = !(ctrK < minValidItems);
-        ctrK = 0;
-      }
+  /** Build a temporary score string; registration characters remain unchanged. */
+  calculateRegistration(
+    registration: Pick<Registration, "items">,
+    selectedAreas: readonly ItemArea[] = ITEM_AREAS
+  ): number {
+    this.resetCalculationResult();
+    // Per-area eligibility is informational; combined selections use the total count.
+    this.gIsValidAE = ITEM_AREAS.map(
+      (_, areaIndex) =>
+        registration.items
+          .slice(areaIndex * 10, (areaIndex + 1) * 10)
+          .filter((value) => value === "0" || value === "1" || value === "2")
+          .length >= MIN_VALID_ITEMS
+    );
+    this.gRawItemScoreString = "9".repeat(50);
+    const areas = ITEM_AREAS.filter((area) => selectedAreas.includes(area));
+    this.gUseItemSubset = areas.length === 5 ? "All" : areas.join("");
+    if (
+      selectedAreas.length === 0 ||
+      selectedAreas.some((area) => !ITEM_AREAS.includes(area))
+    ) {
+      return this.failCalculation(-10005);
     }
-
-    switch (this.gUseItemSubset) {
-      case "A":
-        if (this.gIsValidAE[1])
-          this.gRawItemScoreString =
-            dataString.substring(0, 10) + nineString.substring(0, 40);
-        break;
-      case "B":
-        if (this.gIsValidAE[2])
-          this.gRawItemScoreString =
-            nineString.substring(0, 10) +
-            dataString.substring(10, 10) +
-            nineString.substring(0, 30);
-        break;
-      case "C":
-        if (this.gIsValidAE[3])
-          this.gRawItemScoreString =
-            nineString.substring(0, 20) +
-            dataString.substring(20, 10) +
-            nineString.substring(0, 20);
-        break;
-      case "D":
-        if (this.gIsValidAE[4])
-          this.gRawItemScoreString =
-            nineString.substring(0, 30) +
-            dataString.substring(30, 10) +
-            nineString.substring(0, 10);
-        break;
-      case "E":
-        if (this.gIsValidAE[5])
-          this.gRawItemScoreString =
-            nineString.substring(0, 40) + dataString.substring(40, 10);
-        break;
-      default:
-        this.gRawItemScoreString = dataString;
+    if (registration.items.length !== 50) {
+      return this.failCalculation(-10003);
     }
-
-    this.gCalculateDebugOutput = "Beregner... vent litt...";
-
-    // HARALD: This is where calculation takes place: wrapMainCalculate() calls raschMeasureFromItems, the main calculating function.
+    this.gRawItemScoreString = registration.items
+      .map((value, index) =>
+        areas.includes(ITEM_AREAS[Math.floor(index / 10)]) &&
+        (value === "0" || value === "1" || value === "2")
+          ? value
+          : "9"
+      )
+      .join("");
     this.wrapMainCalculate();
+    return this.gResult;
+  }
 
-    switch (this.gResult) {
+  /** Legacy presentation entry point; calculations are also callable without alerts. */
+  prepareInputForOutput(
+    registration: Pick<Registration, "items">,
+    selectedAreas: readonly ItemArea[] = ITEM_AREAS
+  ): void {
+    const result = this.calculateRegistration(registration, selectedAreas);
+    switch (result) {
+      case -10000:
+        return;
       case -10001:
-        this.hj_error("Kunne ikke beregne samleskåren.  Ingen gyldige data.");
+        this.hj_error("Kunne ikke beregne samleskåren. Ingen gyldige data.");
+        break;
+      case -10004:
+        this.hj_error(
+          "Kan ikke beregne samleskåren hvis færre enn 3 oppgaver er fylt ut."
+        );
+        break;
+      case -10005:
+        this.hj_error("Velg minst ett av områdene A–E.");
         break;
       case -10002:
         this.hj_error(
-          "Kunne ikke beregne samleskåren.  Beregningen konvergerte ikke etter " +
-            this.gNValid +
-            " iterasjoner."
+          "Kunne ikke beregne samleskåren. Beregningen konvergerte ikke etter 500 iterasjoner."
         );
         break;
-      case -10000:
-        break; // normal termination
       default:
-        this.hj_error(
-          "Kunne ikke beregne samleskåren.  Uventet feil i programmet.  Beklager!"
-        );
-    }
-
-    if (this.gNValid < minValidItems) {
-      this.hj_error(
-        "Kan ikke beregne samleskåren hvis færre enn " +
-          minValidItems +
-          " er fylt ut."
-      );
+        this.hj_error("Kunne ikke beregne samleskåren. Ugyldige inndata.");
     }
   }
 
@@ -2680,6 +2655,27 @@ export class Skaring {
 
   // SECTION "-- ***************** CALCULATION AND VARIABLE MANIPULATION ************************"
 
+  /** Clear derived state before every attempt, including rejected selections. */
+  private resetCalculationResult(): void {
+    this.gResult = 0;
+    this.gMeasure = -9999;
+    this.gSE = -9999;
+    this.gNValid = 0;
+    this.gIsMinEstimated = false;
+    this.gIsMaxEstimated = false;
+    this.gCalculateDebugOutput = "";
+    this.gCalculateDebugCurrentState = "Initialized.";
+  }
+
+  private failCalculation(code: number): number {
+    this.gMeasure = -9999;
+    this.gSE = -9999;
+    this.gIsMinEstimated = false;
+    this.gIsMaxEstimated = false;
+    this.gResult = code;
+    return code;
+  }
+
   wrapMainCalculate() {
     // -- This is a wraparound command to run the raschMeasureFromItems function.
     // -- It evaluates the result and puts it into the relevant variables.
@@ -2702,7 +2698,9 @@ export class Skaring {
 
   raschMeasureFromItems(responseString: string): number {
     // -- This is the main calculation script that calculates Rasch scale value and standard error estimate.
-    // -- The script returns a result parameter that is -10000 if successful.
+    // Status codes: -10000 success, -10001 no valid scores, -10002 no convergence,
+    // -10003 invalid input length, -10004 fewer than three valid scores.
+    // calculateRegistration also returns -10005 for an empty or invalid area selection.
     // -- ==============================================================================
     // -- If successful will put measure and SE, number of valid items, whether
     // -- maximum or minimum estimated,
@@ -2734,11 +2732,10 @@ export class Skaring {
     // HARALD: This does not seem to be right. rMax cannot be defined until the completed items have been parsed.
     // I moved it to below, the place corresponding to the same place in the OpenScript version.
     // let rMax = nofItems * (nofCats - 1);
-    this.gMeasure - 9999;
-    this.gSE = -9999;
-    this.gNValid = 0;
-    this.gIsMinEstimated = true;
-    this.gIsMaxEstimated = true;
+    this.resetCalculationResult();
+    if (responseString.length !== nofItems) {
+      return this.failCalculation(-10003);
+    }
 
     for (let i = 0; i < nofItems; i++) {
       // HARALD: For the next line, I reverted back to calling a function instead of using .indexOf
@@ -2759,7 +2756,11 @@ export class Skaring {
 
     this.gNValid = nofCompletedItems;
     if (nofCompletedItems === 0) {
-      return -10001;
+      return this.failCalculation(-10001);
+    }
+
+    if (nofCompletedItems < MIN_VALID_ITEMS) {
+      return this.failCalculation(-10004);
     }
 
     // HARALD: I RE-IMPLEMENTED DEFINITION OF RMAX HERE, CORRESPONDING TO THE OPENSCRIPT VERSION.
@@ -2816,6 +2817,8 @@ export class Skaring {
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
       let expectedScore = 0;
+      // Information belongs to the current estimate, not previous iterations.
+      expectedScoreVariance = 0;
 
       // HARALD: HAS REINSERTED PRINTING ITERATIONS FOR DEBUGGING PURPOSES.
       //     -- Prints iterations for debugging purposes.
@@ -2889,7 +2892,7 @@ export class Skaring {
       // HARALD: Resinserted testing if maxiterations has been reached, this was removed in translation.
       if (iteration === maxIterations - 1) {
         // Maxiterations has been reached without convergence
-        return -10002;
+        return this.failCalculation(-10002);
       }
       oldM = Math.max(Math.min(oldM + 1, newM), oldM - 1);
     }
@@ -2909,7 +2912,8 @@ export class Skaring {
       "\n\n" +
       this.gCalculateDebugOutput;
 
-    return -10000;
+    this.gResult = -10000;
+    return this.gResult;
   }
 
   modellpersentilFraEstimat(theIn: number): number {
