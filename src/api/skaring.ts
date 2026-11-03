@@ -11,6 +11,16 @@ import * as fs from "fs";
 //
 
 import type { Registration } from "../domain/registration";
+import { dateAge, manualAgeError } from "../domain/dateAge";
+
+/** Optional age fields keep the score-only calculation entry point usable. */
+export type CalculationRegistration = Pick<Registration, "items"> &
+  Partial<Pick<Registration, "birthDate" | "testDate" | "age" | "ageSource">>;
+
+export type ModelPercentileResult =
+  | { kind: "missing" }
+  | { kind: "not-computable" }
+  | { kind: "available"; value: number };
 
 export type ItemArea = "A" | "B" | "C" | "D" | "E";
 const ITEM_AREAS: readonly ItemArea[] = ["A", "B", "C", "D", "E"];
@@ -245,7 +255,7 @@ export class Skaring {
 
   /** Build a temporary score string; registration characters remain unchanged. */
   calculateRegistration(
-    registration: Pick<Registration, "items">,
+    registration: CalculationRegistration,
     selectedAreas: readonly ItemArea[] = ITEM_AREAS
   ): number {
     this.resetCalculationResult();
@@ -278,12 +288,60 @@ export class Skaring {
       )
       .join("");
     this.wrapMainCalculate();
+    if (this.gResult === -10000) {
+      this.setCalculationAge(registration);
+    }
     return this.gResult;
+  }
+
+  /** Resolve age independently of the truncated display text and editing events. */
+  private setCalculationAge(registration: CalculationRegistration): void {
+    const calculated = dateAge(
+      registration.birthDate ?? "",
+      registration.testDate ?? ""
+    );
+    if (calculated.kind === "valid") {
+      this.gAlder = calculated.exactYears;
+      this.alder_value = calculated.displayAge;
+      return;
+    }
+    const age = registration.age ?? "";
+    // A stale automatic display value must never become a manual age.
+    if (
+      registration.ageSource !== "automatic" &&
+      age !== "" &&
+      manualAgeError(age) === null
+    ) {
+      const [years, months] = age.split(":").map(Number);
+      this.gAlder = years + months / 12 + 1 / 24;
+      this.alder_value = `${years}:${months}`;
+    }
+  }
+
+  /** Distinguish an absent calculation from an unavailable age-dependent result. */
+  modelPercentile(): ModelPercentileResult {
+    if (this.gResult !== -10000 || !Number.isFinite(this.gMeasure)) {
+      return { kind: "missing" };
+    }
+    if (!Number.isFinite(this.gAlder) || this.gAlder <= 0) {
+      return { kind: "not-computable" };
+    }
+    return {
+      kind: "available",
+      value: this.modellpersentilFraEstimat(
+        this.gMeasure -
+          this.ageToMeasure(
+            this.gAlder,
+            this.gConvertParameter1,
+            this.gConvertParameter2
+          )
+      ),
+    };
   }
 
   /** Legacy presentation entry point; calculations are also callable without alerts. */
   prepareInputForOutput(
-    registration: Pick<Registration, "items">,
+    registration: CalculationRegistration,
     selectedAreas: readonly ItemArea[] = ITEM_AREAS
   ): void {
     const result = this.calculateRegistration(registration, selectedAreas);
@@ -2207,20 +2265,11 @@ export class Skaring {
       }
     }
 
-    if (this.gAlder !== -9999) {
-      // HARALD: Note. The global variable "alder_value" must be adjusted to
-      // represent actual data. (alder_value is the user-inputted text value;
-      // gAlder is a numeric value for calculation, they are not the same)
+    const percentile = this.modelPercentile();
+    if (percentile.kind === "available") {
       vOutput +=
         "Skåren tilsvarer " +
-        this.modellpersentilFraEstimat(
-          this.gMeasure -
-            this.ageToMeasure(
-              this.gAlder,
-              this.gConvertParameter1,
-              this.gConvertParameter2
-            )
-        ) +
+        percentile.value +
         ". persentilen av barn på alderen " +
         this.alder_value +
         " basert på\n" +
@@ -2658,6 +2707,8 @@ export class Skaring {
   /** Clear derived state before every attempt, including rejected selections. */
   private resetCalculationResult(): void {
     this.gResult = 0;
+    this.gAlder = -9999;
+    this.alder_value = "";
     this.gMeasure = -9999;
     this.gSE = -9999;
     this.gNValid = 0;
