@@ -132,7 +132,7 @@ extremfall där intervall inte kan redovisas. Ett textintegrationstest
 kontrollerar 302–304, 209, 206 och 207 via den befintliga rapportbyggaren
 utan att skapa någon React-resultatbild.
 
-## Öppen kompatibilitetsfråga: exakt 18:0
+## Historik: kompatibilitetsfrågan om exakt 18:0
 
 **Diskuteras/verifieras senare, oförändrat i 7B:** vid ett matematiskt
 18-årsvärde kan IEEE-754-aritmetik ge `17.999999999999996`. Den nuvarande
@@ -177,3 +177,56 @@ Etappen är klar för granskning. Den exakta flyttalsgränsen vid 18:0 och
 Windows tie-regel vid exakt halva 0,05-steg förblir uttryckliga
 kompatibilitetsfrågor för senare riktad verifiering, utan ändrat beteende.
 Inga nya åldersavvikelser mot de befintliga Windows-referenserna har påvisats.
+
+## Beslutad komplettering 2026-11-11: precisionsskydd vid intervallgränserna
+
+**Förbättras:** projektägaren har efter den kompletterande verifieringen
+beslutat om ett avgränsat presentationsskydd vid 3:6 och 18:0. Detta ersätter
+ovanstående historiska beslut att behålla det kända exakt-18-beteendet.
+
+`estimateToPresentText` normaliserar endast sitt lokala åldersvärde till
+respektive intervallgräns när avståndet är högst
+`8 * Number.EPSILON * Math.max(1, Math.abs(age), boundary)`.
+Normaliseringen sker före intervalljämförelser och trunkering. Samma funktion
+används redan för åldersekvivalent och konfidensintervallets båda ändpunkter.
+Skyddet ändrar inte Rasch-estimat, standardfel eller annat beräkningstillstånd.
+Det mycket snäva numeriska intervallet skyddar mot flyttalsfel; det är ingen
+praktisk extra åldersmarginal. Verkliga värden lika nära en gräns kan dock inte
+skiljas från flyttalsfel utifrån enbart det beräknade flyttalet.
+
+**Bevaras:** vanliga månadsgränser får inget precisionsskydd och trunkeras
+fortfarande enligt tidigare regel. Modellpercentilens
+`Math.round(theIn * 20) / 20` är helt oförändrad.
+
+**Verifieras:** ToolBooks avrundningsregel för negativa exakta halvsteg har
+ännu inte kunnat fastställas. Den befintliga TypeScript-implementationen
+(exakta halvsteg mot positiv oändlighet) behålls därför. OpenScript-koden
+visar samma strikta åldersjämförelser och trunkering, men faktisk körning
+vid gränserna i ToolBook är inte verifierad.
+
+Regressionstester omfattar båda inversberäkningarna för 3:6 och 18:0,
+konfidensintervallets ändpunktsuttryck, närmaste representerbara åldrar på
+båda sidor om gränserna och värden fyra toleranser utanför. Exakta
+transformationsresultat injiceras i ett av testerna för att skilja
+presentationskontrollen från exp/log-avrundning. Månads- och årsgränser
+inne i intervallet behåller trunkeringen, även om värdet ligger bara ett
+flyttalssteg under gränsen. Ett separat test kontrollerar oförändrat
+beräkningstillstånd och modellpercentil efter presentation.
+
+Kontroller efter kompletteringen:
+
+- `node --test tests/*.test.cjs`: **332 tester passerar**, inklusive
+  beräknings-, Windows-referens-, rapport- och filhanteringstester.
+- TypeScript: `npx --no-install tsc --noEmit --incremental false` passerar.
+- ESLint: `npm run lint` passerar utan varningar eller fel.
+- `git diff --check` för de tre ändrade filerna passerar.
+
+Inga förväntade Windows-referensvärden har ändrats; samtliga befintliga
+referensjämförelser passerar med tidigare toleranser och presentationstexter.
+De syntetiska exakt-18-fallen ändras avsiktligt från 17:11 respektive
+`Høyere enn 18:0` till 18:0. Ingen Windows-körning av dessa syntetiska
+gränsfall har genomförts.
+
+Endast `src/api/skaring.ts`, `tests/calculation.test.cjs` och detta dokument
+ändras av kompletteringen. Befintliga lokala dokument- och referensändringar
+lämnas orörda. Ingen commit eller push görs före granskning.

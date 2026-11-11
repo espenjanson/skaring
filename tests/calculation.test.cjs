@@ -367,16 +367,73 @@ test('age-equivalent limits and CI endpoints retain established truncation away 
   }
 })
 
-test('known exact-18 floating-point behavior is retained pending Windows evidence', () => {
+test('exact interval limits survive both inverse calculations and CI endpoint arithmetic', () => {
   const engine = new Skaring()
-  const exact18Measure = (Math.log(18) - 1.968) / 0.254
-  assert.equal(Math.exp(1.968 + 0.254 * exact18Measure), 17.999999999999996)
-  assert.equal(engine.estimateToPresentText(exact18Measure), '17:11')
-  // Equivalent algebra can land on the other side of the same mathematical limit.
-  const inverse18 = engine.ageToMeasure(18, 1.968, 0.254)
-  assert.equal(engine.estimateToPresentText(inverse18), 'Høyere enn 18:0')
+  for (const [age, expected] of [[3.5, '3:6'], [18, '18:0']]) {
+    for (const target of [(Math.log(age) - 1.968) / 0.254, engine.ageToMeasure(age, 1.968, 0.254)]) {
+      assert.equal(engine.estimateToPresentText(target), expected)
+      const se = 0.5
+      assert.equal(engine.estimateToPresentText((target + 1.96 * se) - 1.96 * se), expected)
+      assert.equal(engine.estimateToPresentText((target - 1.96 * se) + 1.96 * se), expected)
+    }
+  }
 })
 
+// Step by one binary64 value rather than assuming a decimal offset is one ULP.
+function adjacentFloat(value, upwards) {
+  const view = new DataView(new ArrayBuffer(8))
+  view.setFloat64(0, value)
+  view.setBigUint64(0, view.getBigUint64(0) + (upwards ? 1n : -1n))
+  return view.getFloat64(0)
+}
+
+test('presentation normalizes adjacent endpoint ages but preserves values outside the tolerance', t => {
+  const engine = new Skaring()
+  // Inject the transformation result to exercise exact binary64 neighbors independently of exp/log rounding.
+  let transformedAge
+  t.mock.method(Math, 'exp', () => transformedAge)
+  for (const [boundary, exact, below, above] of [
+    [3.5, '3:6', 'Lavere enn 3:6', '3:6'],
+    [18, '18:0', '17:11', 'Høyere enn 18:0'],
+  ]) {
+    for (const age of [adjacentFloat(boundary, false), boundary, adjacentFloat(boundary, true)]) {
+      transformedAge = age
+      assert.equal(engine.estimateToPresentText(0), exact)
+    }
+    const tolerance = 8 * Number.EPSILON * Math.max(1, boundary)
+    for (const [age, expected] of [[boundary - 4 * tolerance, below], [boundary + 4 * tolerance, above]]) {
+      transformedAge = age
+      assert.equal(engine.estimateToPresentText(0), expected)
+    }
+  }
+})
+
+test('ordinary month boundaries retain truncation without a precision guard', t => {
+  const engine = new Skaring()
+  let transformedAge
+  t.mock.method(Math, 'exp', () => transformedAge)
+  for (const [boundary, below, exact] of [[4.5, '4:5', '4:6'], [10, '9:11', '10:0']]) {
+    transformedAge = adjacentFloat(boundary, false)
+    assert.equal(engine.estimateToPresentText(0), below)
+    transformedAge = boundary
+    assert.equal(engine.estimateToPresentText(0), exact)
+    transformedAge = adjacentFloat(boundary, true)
+    assert.equal(engine.estimateToPresentText(0), exact)
+  }
+})
+
+test('endpoint presentation leaves calculation state and model percentiles unchanged', () => {
+  const engine = new Skaring()
+  const fixture = references.cases.find(row => row.id === '201')
+  calculate(engine, fixture.registration)
+  const before = JSON.stringify(engine)
+  const percentile = engine.modelPercentile()
+  for (const age of [3.5, 18]) {
+    engine.estimateToPresentText(engine.ageToMeasure(age, 1.968, 0.254))
+  }
+  assert.equal(JSON.stringify(engine), before)
+  assert.deepEqual(engine.modelPercentile(), percentile)
+})
 
 test('all percentile rounding cells approach the expected lookup from either side', () => {
   const engine = new Skaring()

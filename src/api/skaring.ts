@@ -3093,9 +3093,17 @@ export class Skaring {
   // Assuming global variables for this function are declared and initialized outside
 
   estimateToPresentText(theIn: number): string {
-    const ageEquivalent = Math.exp(
+    let ageEquivalent = Math.exp(
       this.gConvertParameter1 + this.gConvertParameter2 * theIn
     );
+    // Normalize only interval endpoints within floating-point precision; keep ordinary month truncation.
+    for (const boundary of [this.gMinEstAge, this.gMaxEstAge]) {
+      const tolerance =
+        8 * Number.EPSILON * Math.max(1, Math.abs(ageEquivalent), boundary);
+      if (Math.abs(ageEquivalent - boundary) <= tolerance) {
+        ageEquivalent = boundary;
+      }
+    }
     if (ageEquivalent < this.gMinEstAge) {
       return "Lavere enn " + this.yearDecToMonth(this.gMinEstAge);
     } else if (ageEquivalent > this.gMaxEstAge) {
