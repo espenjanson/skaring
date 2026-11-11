@@ -83,6 +83,8 @@ for (const [id, areas, rasch, name] of cases) {
     await page.evaluate(() => { window.print = () => { window.recordPrint() } })
     await page.getByRole('button', { name: 'Skriv ut…', exact: true }).click()
     assert.equal(printed, 1)
+    assert.equal(await page.title(), id === '201' ? 'Resultat Test201_100' : `Resultat Test${id}`)
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
     await page.emulateMedia({ media: 'print' })
     assert.equal(await page.locator('.result-controls').isVisible(), false)
     assert.equal(await sheet.isVisible(), true)
@@ -151,4 +153,34 @@ test('new long-text reference 401 uses fixed name and note fields without font s
   assert.equal(new Set(rectangles.map(value => value.fontSize)).size, 1)
   assert.ok(rectangles.every(value => value.overflow === 'hidden'))
   if (process.env.NUBU_REPORT_DIR) await page.locator('.report-sheet').screenshot({ path: path.join(process.env.NUBU_REPORT_DIR, '401-long-text.png') })
+})
+
+test('Step B controls, header alignment, gray labels, heading clearance and title cleanup', async t => {
+  const page = await openReport(t, '205', ['A'], true)
+  const original = await page.title()
+  const geometry = await page.locator('.report-sheet').evaluate(sheet => {
+    const field = id => sheet.querySelector(`[data-object="${id}"] .report-field`)
+    const name = field('navn').getBoundingClientRect()
+    const gender = field('led_kjonn').querySelector('span > span:nth-child(2)').getBoundingClientRect()
+    const line = sheet.querySelector('[data-object="EstimateLine"]').getBoundingClientRect()
+    const headings = [...sheet.querySelectorAll('[data-object^="AreaPrompt_"] .report-field')].map(node => {
+      const range = document.createRange()
+      range.selectNodeContents(node)
+      return { bottom: range.getBoundingClientRect().bottom, lineHeight: getComputedStyle(node).lineHeight, fontSize: getComputedStyle(node).fontSize }
+    })
+    return { nameX: name.x, genderX: gender.x, lineTop: line.top, headings,
+      gray: getComputedStyle(field('item_11')).color }
+  })
+  assert.ok(Math.abs(geometry.nameX - geometry.genderX) < 0.1)
+  assert.equal(geometry.gray, 'rgb(204, 204, 204)')
+  assert.ok(geometry.headings.every(heading => heading.bottom < geometry.lineTop), JSON.stringify(geometry))
+  assert.ok(geometry.headings.every(heading => heading.lineHeight === heading.fontSize))
+  if (process.env.NUBU_REPORT_DIR) await page.locator('.report-sheet').screenshot({ path: path.join(process.env.NUBU_REPORT_DIR, '205-A-rasch.png') })
+  await page.evaluate(() => { window.print = () => {} })
+  await page.getByRole('button', { name: 'Skriv ut…', exact: true }).click()
+  assert.equal(await page.title(), 'Resultat Test205')
+  await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
+  assert.equal(await page.title(), original)
+  assert.equal(await page.locator('#stage-note').count(), 0)
+  assert.equal(await page.getByText('Endringer lagret', { exact: true }).isVisible(), true)
 })

@@ -2224,7 +2224,7 @@ export class Skaring {
       const description = ` Beregnet ut fra ${areaText} `;
       const left = Math.floor((65 - description.length) / 2);
       vOutput += "=".repeat(left) + description +
-        "=".repeat(65 - left - description.length) + "\n\n";
+        "=".repeat(65 - left - description.length) + "\n";
     }
 
     vOutput +=
@@ -2275,7 +2275,7 @@ export class Skaring {
       vOutput +=
         "=================================================================\n";
       vOutput +=
-        "Samleskår (Rasch-skår)    :     " + this.gMeasure.toFixed(2) + "\n";
+        "Samleskår (Rasch-skår)    :     " + this.gMeasure.toFixed(2).padStart(5) + "\n";
 
       if (
         this.gSE !== -9999 &&
@@ -2283,7 +2283,7 @@ export class Skaring {
         !this.gIsMaxEstimated
       ) {
         vOutput +=
-          "Standardfeil              :     " + this.gSE.toFixed(2) + "\n";
+          "Standardfeil              :     " + this.gSE.toFixed(2).padStart(5) + "\n";
       } else {
         vOutput += "Standardfeil for skåren kan ikke beregnes.\n";
       }

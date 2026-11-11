@@ -13,6 +13,7 @@ export type ReportField = GraphicBase & {
   align: "left" | "center" | "right"
   lastWordBold: boolean
   singleLine: boolean
+  valueOffset?: number
 }
 export type ReportLine = GraphicBase & {
   kind: "line"
@@ -26,7 +27,7 @@ export type ReportDocument = { objects: readonly ReportGraphic[]; outsideMargins
 
 export const reportFooter = [
   "Grete Andrup, Harald Janson og Bente Gjærum: NUBU 4-16 Motorisk test. © 2008 Universitetsforlaget.",
-  "Dataprogram: Harald Janson 2026, med støtte fra Espen Janson og bruk av ChatGPT (OpenAI).",
+  "Dataprogram: Harald Janson 2026, med støtte fra Espen Janson og bruk av KI (ChatGPT fra OpenAI).",
 ] as const
 
 /** Implements the legacy drawing API while leaving the calculation class intact. */
@@ -110,17 +111,21 @@ export class ReportGraphics extends Skaring {
     // The 2021 documentation has one name row, one demographics row, and two
     // equally tall note rectangles. The later TypeScript header omitted these.
     this.moveField("led_kjonn", { x1: 912, y1: 1110, x2: 3273, y2: 1425 })
+    this.field("led_kjonn").valueOffset = this.field("navn").bounds.x1 - this.field("led_kjonn").bounds.x1
     this.moveField("led_alder", { x1: 8150, y1: 1110, x2: 8675, y2: 1425 })
     this.moveField("alder", { x1: 8700, y1: 1110, x2: 9249, y2: 1425 })
     this.moveField("output", { x1: 924, y1: 2175, x2: 9180, y2: 8424 })
     const add = (id: string, bounds: Bounds, text: string) =>
       this.createField(id, bounds, text, true, "Sans", "small", "regular", "black", "left")
-    add("led_fodtdato", { x1: 3700, y1: 1110, x2: 4800, y2: 1425 }, "Født dato:")
-    add("fodtdato", { x1: 4800, y1: 1110, x2: 5950, y2: 1425 }, registration.birthDate)
-    add("led_testdato", { x1: 6000, y1: 1110, x2: 6900, y2: 1425 }, "Testdato:")
-    add("testdato", { x1: 6900, y1: 1110, x2: 8100, y2: 1425 }, registration.testDate)
-    add("merknad", { x1: 912, y1: 1440, x2: 4670, y2: 2115 }, registration.note)
-    add("merknad2", { x1: 4950, y1: 1440, x2: 9027, y2: 2115 }, registration.note2)
+    add("led_fodtdato", { x1: 3700, y1: 1110, x2: 4550, y2: 1425 }, "Født dato:")
+    add("fodtdato", { x1: 4550, y1: 1110, x2: 5950, y2: 1425 }, registration.birthDate)
+    add("led_testdato", { x1: 6000, y1: 1110, x2: 6700, y2: 1425 }, "Testdato:")
+    add("testdato", { x1: 6700, y1: 1110, x2: 8100, y2: 1425 }, registration.testDate)
+    // Share the existing horizontal envelope equally, retaining a roughly 5 mm gap.
+    const noteLeft = 912, noteRight = 9027, noteGap = 280
+    const noteWidth = (noteRight - noteLeft - noteGap) / 2
+    add("merknad", { x1: noteLeft, y1: 1440, x2: noteLeft + noteWidth, y2: 2115 }, registration.note)
+    add("merknad2", { x1: noteLeft + noteWidth + noteGap, y1: 1440, x2: noteRight, y2: 2115 }, registration.note2)
     this.moveField("copyright", { x1: 516, y1: 14340, x2: 9570, y2: 14790 })
     this.setFieldText("copyright", reportFooter.join("\n"))
 

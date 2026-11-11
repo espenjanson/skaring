@@ -121,10 +121,9 @@ export default function Page() {
         </fieldset>
       </form>
       <p className="change-status" role="status">{files.state.status}</p>
-      <p id="stage-note" className="stage-note">Dato: dag.måned.år (tosifret år betyr 2000–2099). Gyldige datoer formateres når du forlater feltet. Alder beregnes automatisk ved gyldig datopar og alder 1:6–99:11; ellers kan du skrive Å:M.</p>
     </div>
     </div>
-    {view === "result" && <ResultView back={() => setView("registration")} registration={data} settings={resultSettings} onSettingsChange={setResultSettings} />}
+    {view === "result" && <ResultView back={() => setView("registration")} registration={data} settings={resultSettings} onSettingsChange={setResultSettings} fileName={files.state.association?.fileName} />}
     <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} unsavedChosen={files.unsavedChosen} clearChosen={files.clearChosen} />
   </main>
 }

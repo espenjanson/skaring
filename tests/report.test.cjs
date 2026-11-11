@@ -169,13 +169,34 @@ test('fixed text rectangles and footer are contained and do not collide with gra
   const note = object(report, 'merknad').bounds
   const note2 = object(report, 'merknad2').bounds
   assert.equal(note.y2 - note.y1, note2.y2 - note2.y1)
+  assert.ok(Math.abs((note.x2 - note.x1) - (note2.x2 - note2.x1)) < 1e-9)
+  assert.ok(Math.abs((note2.x1 - note.x2) / 100 - 5) < 0.1)
+  const gender = object(report, 'led_kjonn')
+  assert.equal(gender.bounds.x1 + gender.valueOffset, object(report, 'navn').bounds.x1)
   assert.ok(note.y2 <= object(report, 'output').bounds.y1)
   assert.ok(note.x2 < note2.x1)
   const footer = object(report, 'copyright')
   assert.equal(footer.text, reportFooter.join('\n'))
+  assert.ok(footer.text.endsWith('Dataprogram: Harald Janson 2026, med støtte fra Espen Janson og bruk av KI (ChatGPT fra OpenAI).'))
   const graphBottom = Math.max(...report.objects.filter(value => /^item_|^ageprompt/.test(value.id)).map(value => value.bounds.y2))
   assert.ok(footer.bounds.y1 > graphBottom)
   assert.ok(footer.bounds.y2 <= 27700)
+})
+
+test('subset and all-area separators have no following blank row; signed Rasch and SE decimals align', () => {
+  for (const id of ['201', '208']) {
+    const data = dataFor(refs.cases.find(row => row.id === id))
+    for (const areas of [[...'ABCDE'], id === '201' ? ['A'] : ['C']]) {
+      const { engine, report } = build(data, areas)
+      const lines = object(report, 'output').text.split('\n')
+      assert.ok(lines[1].startsWith('Samleskår (Aldersekvivalent)'))
+      const rasch = lines.find(line => line.startsWith('Samleskår (Rasch-skår)'))
+      const se = lines.find(line => line.startsWith('Standardfeil '))
+      assert.equal(rasch.indexOf('.'), se.indexOf('.'))
+      assert.equal(Number(rasch.split(':')[1]), Number(engine.gMeasure.toFixed(2)))
+      assert.equal(Number(se.split(':')[1]), Number(engine.gSE.toFixed(2)))
+    }
+  }
 })
 
 

@@ -3,24 +3,31 @@
 import { useEffect, useRef } from "react";
 
 import { ReportPage } from "./ReportPage";
+import { createReportPrinter } from "../report/printing";
 import type { Registration } from "../domain/registration";
 import { calculateResult, resultAreas } from "../domain/results";
 import type { ResultSettings } from "../domain/results";
 
 /** Report controls stay separate from the printable A4 document. */
-export function ResultView({ back, registration, settings, onSettingsChange }: {
+export function ResultView({ back, registration, settings, onSettingsChange, fileName }: {
   back: () => void;
   registration: Registration;
   settings: ResultSettings;
   onSettingsChange: (settings: ResultSettings) => void;
+  fileName?: string;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
+  const printer = useRef<ReturnType<typeof createReportPrinter> | null>(null);
+  useEffect(() => {
+    printer.current = createReportPrinter(window, document);
+    return () => { printer.current?.restore(); printer.current = null; };
+  }, []);
   useEffect(() => { heading.current?.focus(); }, []);
   const result = calculateResult(registration, settings);
 
   return <section className="result-view" aria-labelledby="result-heading" data-printable={result.canPrint}>
     <div className="result-controls">
-      <button type="button" className="back-control" onClick={back}>
+      <button type="button" className="back-control" onClick={() => { printer.current?.restore(); back(); }}>
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
           <path d="M17 10H3M9 4l-6 6 6 6" />
         </svg>
@@ -42,7 +49,7 @@ export function ResultView({ back, registration, settings, onSettingsChange }: {
       </fieldset>
       <label className="result-rasch-control"><input type="checkbox" checked={settings.showRasch} onChange={event => onSettingsChange({ ...settings, showRasch: event.target.checked })} />Vis Rasch-skår</label>
       </div>
-      <button type="button" className="print-result" disabled={!result.canPrint} onClick={() => { if (result.canPrint) window.print(); }}>Skriv ut…</button>
+      <button type="button" className="print-result" disabled={!result.canPrint} onClick={() => { if (result.canPrint) printer.current?.print(fileName); }}>Skriv ut…</button>
     </div>
     <div className="result-presentation" aria-live="polite" aria-atomic="true">
       {result.kind === "unavailable"

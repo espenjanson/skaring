@@ -4,9 +4,13 @@ import type { ReportDocument, ReportField, ReportGraphic } from "../report/graph
 const unitsPerPoint = 100 * 25.4 / 72
 // Ten-point leading keeps the full subset/Rasch block above the unchanged graph.
 const resultLineHeight = 1.25
-const colors: Record<string, string> = { black: "#000", lightGray: "#bfbfbf", darkGray: "#555" }
+const colors: Record<string, string> = { black: "#000", lightGray: "#cccccc", darkGray: "#555" }
 
 function fieldContent(field: ReportField) {
+  if (field.valueOffset !== undefined) {
+    const [label, value] = field.text.split("\t")
+    return <span style={{ display: "grid", gridTemplateColumns: `${field.valueOffset}px 1fr` }}><span>{label}</span><span>{value}</span></span>
+  }
   if (!field.lastWordBold) return field.text
   const match = /^(.*\s)(\S+)$/s.exec(field.text)
   return match ? <>{match[1]}<strong>{match[2]}</strong></> : field.text
@@ -28,13 +32,13 @@ function Graphic({ object }: { object: ReportGraphic }) {
     <div className="report-field" style={{
       width: "100%", height: "100%", overflow: "hidden", margin: 0, padding: 0,
       fontFamily: object.face === "Courier" ? '"Courier New", Courier, monospace' : "Arial, Helvetica, sans-serif",
-      fontSize: object.size * unitsPerPoint, lineHeight: object.id === "output" ? resultLineHeight : 1.12,
+      fontSize: object.size * unitsPerPoint, lineHeight: object.id === "output" ? resultLineHeight : object.id.startsWith("AreaPrompt_") ? 1 : 1.12,
       fontWeight: object.style === "bold" ? 700 : 400,
       textDecoration: object.style === "underline" ? "underline" : undefined,
       color: colors[object.color] ?? object.color, textAlign: object.align,
       whiteSpace: object.id === "output" || object.singleLine ? "pre" : "pre-wrap",
       overflowWrap: object.id === "merknad" || object.id === "merknad2" ? "anywhere" : "normal",
-      tabSize: object.id === "led_kjonn" ? 24 : 8,
+      tabSize: 8,
     }}>{fieldContent(object)}</div>
   </foreignObject>
 }
