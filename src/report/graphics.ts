@@ -30,6 +30,22 @@ export const reportFooter = [
   "Dataprogram: Harald Janson 2026, med støtte fra Espen Janson og bruk av KI (ChatGPT fra OpenAI).",
 ] as const
 
+// Approved Step C offsets in ToolBook units; unlisted items retain their column center.
+const itemHorizontalOffsets: Readonly<Record<string, number>> = {
+  // A2/A10 move 140 units right (2.49 mm) to clear the unchanged Rasch labels.
+  A2: -184, A3: 324, A9: 324, A10: -184,
+  C3: -324, C4: 324, C9: 324, C10: -324,
+  D4: -324, D5: 324, D6: 324,
+  E1: -324, E2: 324, E6: 324, E7: 324, E8: -324, E9: -324,
+}
+
+// Readability exceptions are applied after rounding the original algorithmic top edge.
+const itemVerticalAdjustments: Readonly<Record<string, number>> = {
+  C8: -54, C9: 54, C10: 54,
+  D5: 40, D6: -40,
+  E6: 76, E7: -76, E8: -76, E9: 76,
+}
+
 /** Implements the legacy drawing API while leaving the calculation class intact. */
 export class ReportGraphics extends Skaring {
   private readonly objects = new Map<string, ReportGraphic>()
@@ -94,13 +110,32 @@ export class ReportGraphics extends Skaring {
     object.bounds = this.convertVertices(bounds)
   }
 
-  /** Supplement only the missing 2021 header objects and the requested footer. */
+  /** Restore the original item-placement algorithm with only the approved readability offsets. */
+  protected positionItems(): void {
+    const minMeasure = this.ageToMeasure(this.gMinEstAge, this.gConvertParameter1, this.gConvertParameter2)
+    const maxMeasure = this.ageToMeasure(this.gMaxEstAge, this.gConvertParameter1, this.gConvertParameter2)
+    const firstColumnLeft = 3108
+    const columnSpacing = (8460 - firstColumnLeft) / 5
+    this.gItemLabels.forEach((label, index) => {
+      const id = `item_${index + 1}`
+      const original = this.field(id).sourceBounds
+      const width = original.x2 - original.x1
+      const height = original.y2 - original.y1
+      const x1 = Math.round(firstColumnLeft + Math.floor(index / 10) * columnSpacing) + (itemHorizontalOffsets[label] ?? 0)
+      const y1 = Math.round(this.YPUFromMeasure(this.aItemDifficulties[index], minMeasure, maxMeasure,
+        this.rectangleGraph.y1, this.rectangleGraph.y2) - height / 2) + (itemVerticalAdjustments[label] ?? 0)
+      this.moveField(id, { x1, y1, x2: x1 + width, y2: y1 + height })
+    })
+  }
+
+  /** Build the report with approved item placement and header/footer supplements. */
   buildReport(registration: Registration): ReportDocument {
     this.objects.clear()
     // Graph1 is already defined in the TypeScript source as rectangleGraph.
     this.put({ kind: "rectangle", id: "Graph1", sourceBounds: this.rectangleGraph,
       bounds: this.convertVertices(this.rectangleGraph), visible: true, fill: false })
     this.setGraph(0)
+    this.positionItems()
     this.setFieldText("headingfield", "Resultat for motoriske oppgaver i NUBU 4-16")
     this.setFieldText("led_navn", "Navn:")
     this.setFieldText("navn", registration.name)

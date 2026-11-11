@@ -59,8 +59,57 @@ test('static object geometry is reused directly from TypeScript definitions', ()
   const { report } = build()
   const supplemented = ['led_kjonn', 'led_alder', 'alder', 'output', 'copyright', 'EstimateLine']
   assert.equal(definitions.length, 122)
-  for (const definition of definitions.filter(value => !supplemented.includes(value.id))) {
+  for (const definition of definitions.filter(value => !supplemented.includes(value.id) && !/^item_/.test(value.id))) {
     assert.deepEqual(object(report, definition.id).sourceBounds, definition.bounds, definition.id)
+  }
+})
+
+test('all 50 item coordinates match the approved Step C table with unchanged dimensions', () => {
+  const { report } = build()
+  const ys = [
+    13105,12608,12466,11988,11518,11704,11004,10259,9399,9559,
+    13831,12892,12289,12094,11642,11057,10454,10206,9958,9408,
+    13636,13450,12910,12794,12582,11456,11713,9913,10118,10118,
+    13881,13060,12121,11580,11655,11451,10224,9949,9674,9258,
+    12750,12653,12307,11199,10596,10406,10201,10121,10406,9665,
+  ]
+  const xs = [
+    3108,2924,3432,3108,3108,3108,3108,3108,3432,2924,
+    4178,4178,4178,4178,4178,4178,4178,4178,4178,4178,
+    5249,5249,4925,5573,5249,5249,5249,5249,5573,4925,
+    6319,6319,6319,5995,6643,6643,6319,6319,6319,6319,
+    7066,7714,7390,7390,7390,7714,7714,7066,7066,7390,
+  ]
+  for (let index = 0; index < 50; index++) {
+    assert.deepEqual(object(report, `item_${index + 1}`).sourceBounds,
+      { x1: xs[index], y1: ys[index], x2: xs[index] + 663, y2: ys[index] + 192 }, `item_${index + 1}`)
+  }
+})
+
+test('Step C changes only item coordinates and never calculation state or other report objects', () => {
+  // Omitting the placement pass reconstructs the approved Step B report from retained source definitions.
+  class PreviousReportGraphics extends ReportGraphics { positionItems() {} }
+  for (const fixture of refs.cases) {
+    for (const areas of [[...'ABCDE'], ['A']]) {
+      const data = dataFor(fixture)
+      const current = new ReportGraphics(), previous = new PreviousReportGraphics()
+      current.calculateRegistration(data, areas)
+      previous.calculateRegistration(data, areas)
+      current.svShowRasch = previous.svShowRasch = true
+      const before = calculationState(current)
+      const report = current.buildReport(data), oldReport = previous.buildReport(data)
+      assert.equal(calculationState(current), before)
+      assert.equal(calculationState(current), calculationState(previous))
+      for (const item of report.objects) {
+        const old = object(oldReport, item.id)
+        if (!/^item_/.test(item.id)) assert.deepEqual(item, old, item.id)
+        else {
+          const { bounds, sourceBounds, ...properties } = item
+          const { bounds: oldBounds, sourceBounds: oldSourceBounds, ...oldProperties } = old
+          assert.deepEqual(properties, oldProperties, item.id)
+        }
+      }
+    }
   }
 })
 

@@ -184,3 +184,74 @@ test('Step B controls, header alignment, gray labels, heading clearance and titl
   assert.equal(await page.locator('#stage-note').count(), 0)
   assert.equal(await page.getByText('Endringer lagret', { exact: true }).isVisible(), true)
 })
+
+test('Step C Test402 clears other items and Rasch labels in all 31 selections', async t => {
+  const page = await openReport(t, '402', [...'ABCDE'], true)
+  let baseline
+  let minimumVerticalGap = Infinity
+  const minimumClearance = { A2: Infinity, A10: Infinity, A2_A3: Infinity, A10_A9: Infinity }
+  for (let mask = 1; mask < 32; mask++) {
+    await page.emulateMedia({ media: 'screen' })
+    for (let area = 0; area < 5; area++) {
+      await page.getByRole('checkbox', { name: `${'ABCDE'[area]}-oppgaver`, exact: true }).setChecked(Boolean(mask & (1 << area)))
+    }
+    for (const media of ['screen', 'print']) {
+      await page.emulateMedia({ media })
+      const result = await page.locator('.report-sheet').evaluate(svg => {
+        const sheet = svg.getBoundingClientRect()
+        const scale = 210 / sheet.width
+        const items = [...svg.querySelectorAll('[data-object^="item_"]')].map(node => {
+          const range = document.createRange()
+          range.selectNodeContents(node.firstElementChild)
+          const box = range.getBoundingClientRect()
+          return { id: node.getAttribute('data-object'), text: node.textContent,
+            x: box.x * scale, y: box.y * scale, w: box.width * scale, h: box.height * scale,
+            geometry: ['x', 'y', 'width', 'height'].map(key => Number(node.getAttribute(key))) }
+        })
+        const collisions = []
+        const scaleCollisions = []
+        let minimumGap = Infinity
+        for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+          const a = items[i], b = items[j]
+          const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
+          const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)
+          if (dx > 0 && dy > 0) collisions.push([a.text, b.text])
+          if (dx > 0 && a.text[0] === b.text[0]) minimumGap = Math.min(minimumGap, -dy)
+        }
+        const labels = [...svg.querySelectorAll('[data-object^="measureprompt"]')].map(node => {
+          const range = document.createRange()
+          range.selectNodeContents(node.firstElementChild)
+          const box = range.getBoundingClientRect()
+          return { id: node.getAttribute('data-object'), x: box.x * scale, y: box.y * scale, w: box.width * scale, h: box.height * scale }
+        })
+        for (const a of items) for (const b of labels) {
+          if (Math.min(a.x + a.w, b.x + b.w) > Math.max(a.x, b.x) &&
+            Math.min(a.y + a.h, b.y + b.h) > Math.max(a.y, b.y)) scaleCollisions.push([a.id, b.id])
+        }
+        const item = id => items.find(node => node.id === id)
+        const label = id => labels.find(node => node.id === id)
+        const a2 = item('item_2'), a10 = item('item_10')
+        const lower = label('measureprompt6'), upper = label('measureprompt13')
+        return { collisions, scaleCollisions, minimumGap, geometry: items.map(item => item.geometry),
+          clearance: { A2: a2.x - (lower.x + lower.w), A10: a10.x - (upper.x + upper.w),
+            A2_A3: item('item_3').x - (a2.x + a2.w), A10_A9: item('item_9').x - (a10.x + a10.w) } }
+      })
+      assert.deepEqual(result.collisions, [], `mask ${mask}, ${media}`)
+      assert.deepEqual(result.scaleCollisions, [], `scale labels, mask ${mask}, ${media}`)
+      for (const key of Object.keys(minimumClearance)) minimumClearance[key] = Math.min(minimumClearance[key], result.clearance[key])
+      baseline ??= result.geometry
+      assert.deepEqual(result.geometry, baseline)
+      minimumVerticalGap = Math.min(minimumVerticalGap, result.minimumGap)
+    }
+  }
+  assert.ok(minimumVerticalGap > 0.10 && minimumVerticalGap < 0.13, String(minimumVerticalGap))
+  assert.ok(minimumClearance.A2 > 2.4 && minimumClearance.A10 > 1.6, JSON.stringify(minimumClearance))
+  assert.ok(minimumClearance.A2_A3 > 1.3 && minimumClearance.A10_A9 > 0.5, JSON.stringify(minimumClearance))
+  t.diagnostic(`Minimum clearances in mm: ${JSON.stringify(minimumClearance)}`)
+  await page.emulateMedia({ media: 'screen' })
+  if (process.env.NUBU_REPORT_DIR) {
+    await page.locator('.report-sheet').screenshot({ path: path.join(process.env.NUBU_REPORT_DIR, '402-step-c.png') })
+    await page.emulateMedia({ media: 'print' })
+    await page.pdf({ path: path.join(process.env.NUBU_REPORT_DIR, '402-step-c.pdf'), preferCSSPageSize: true, printBackground: true, displayHeaderFooter: false })
+  }
+})
