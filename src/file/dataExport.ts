@@ -7,7 +7,7 @@ import type { LocalFile } from "./browserFiles";
 
 export const exportHeaders = [
   "FILNAVN", "NAVN", "KJØNN", "FØDSELSDATO", "TESTDATO", "VIST ALDER",
-  "LOGALDER", "MERKNAD", "MERKNAD 2", "OPPGAVESKÅRER", "RASCHSKÅRE",
+  "LOGALDER", "MERKNAD", "MERKNAD 2", "OPPGAVESKÅRER", "RASCHSKÅR",
   "STANDARDFEIL", "MINESTIMERT", "MAKSESTIMERT", "ALDERSEKVIVALENT",
   "NEDRE GRENSE KONF.INT.", "ØVRE GRENSE KONF.INT.", "MODELLBASERT PERSENTIL",
 ] as const;
@@ -28,7 +28,8 @@ export function compareExportNames(a: ExportFile, b: ExportFile): number {
 }
 
 export function exportErrorMessage(fileName: string, reason: string): string {
-  return `Dataeksporten ble avbrutt. Filen «${fileName}» kunne ikke behandles: ${reason}. Rett problemet og prøv igjen. Ingen eksportfil er lastet ned.`;
+  const sentence = reason.endsWith(".") ? reason : `${reason}.`;
+  return `Dataeksporten ble avbrutt. Filen «${fileName}» kunne ikke behandles: ${sentence} Rett problemet og prøv igjen. Ingen eksportfil er lastet ned.`;
 }
 
 /** Reject delimiters rather than silently altering field boundaries. */
@@ -50,15 +51,13 @@ export async function buildDataExport(files: readonly ExportFile[], cancelled: (
     if (cancelled()) return { kind: "cancelled" };
     let bytes: Uint8Array;
     try { bytes = new Uint8Array(await file.arrayBuffer()); }
-    catch { return { kind: "error", fileName: file.name, reason: "Filen kunne ikke leses" }; }
+    catch { return { kind: "error", fileName: file.name, reason: "Kunne ikke åpne filen." }; }
     if (cancelled()) return { kind: "cancelled" };
     try {
       const name = textField(file.name);
       const parsed = parseNubu100(bytes);
       if (parsed.kind !== "known-format") {
-        const reason = parsed.kind === "unknown-identifier" ? "Filformatet er ikke NUBUMotor_100" :
-          parsed.error.code === "control-character" ? "Filen inneholder tabulator, linjeskift eller andre ugyldige kontrolltegn" :
-          "Filen har ugyldig NUBUMotor_100-format eller Windows-1252-koding";
+        const reason = parsed.kind === "unknown-identifier" ? "Ukjent filformat." : "Kunne ikke åpne filen.";
         return { kind: "error", fileName: file.name, reason };
       }
       const validated = validateForSave({ ...parsed.record, ageSource: "manual" });

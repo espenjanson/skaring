@@ -218,6 +218,30 @@ test('adapter downloads use the dated proposal repeatedly until a file has actua
 })
 
 const referenceDirectory = path.join(__dirname, '../docs/reference-tests/datafiler')
+for (const name of ['Test403.~Z4', 'Test403._Z4', 'Test403.txt', 'UtenFilendelse']) {
+  test(`registration content opens independently of filename and passes ${name} unchanged to download`, async () => {
+    const w = workflow()
+    const original = new Uint8Array(fs.readFileSync(path.join(referenceDirectory, 'Test403.~Z4')))
+    let received
+    const adapter = new BrowserFileActions(w, readLocalFile, (data, fileName) => {
+      received = {data, fileName}
+      return 'started'
+    })
+    assert.equal((await adapter.readSelected(requestOpen(w), localFile(original, name))).kind, 'opened')
+    const parsed = parseNubu100(original)
+    assert.equal(parsed.kind, 'known-format')
+    assert.deepEqual(w.getSnapshot().current.items, parsed.record.items)
+    assert.equal(w.getSnapshot().current.name, parsed.record.name)
+    assert.equal(w.getSnapshot().current.note, parsed.record.note)
+    assert.equal(w.getSnapshot().current.note2, parsed.record.note2)
+    assert.equal(w.getSnapshot().current.gender, null)
+    w.requestDownload()
+    assert.equal(fileName(w).suggestedName, name)
+    assert.equal(adapter.saveNamed(fileName(w).token, name).kind, 'saved')
+    assert.equal(received.fileName, name)
+    assert.deepEqual(received.data, original)
+  })
+}
 for (const name of fs.readdirSync(referenceDirectory).filter(name => name.endsWith('.~Z4'))) {
   test(`reference file ${name} opens and downloads with identical bytes and unchanged opened association`, async () => {
     const w = workflow()

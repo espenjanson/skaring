@@ -35,7 +35,7 @@ test('14 references: exact schema, encoding, precision and explicit Windows impr
   assert.equal(result.count, 14)
   const output = rows(result)
   assert.equal(output.length, 15)
-  assert.deepEqual(output[0], [ 'FILNAVN', 'NAVN', 'KJØNN', 'FØDSELSDATO', 'TESTDATO', 'VIST ALDER', 'LOGALDER', 'MERKNAD', 'MERKNAD 2', 'OPPGAVESKÅRER', 'RASCHSKÅRE', 'STANDARDFEIL', 'MINESTIMERT', 'MAKSESTIMERT', 'ALDERSEKVIVALENT', 'NEDRE GRENSE KONF.INT.', 'ØVRE GRENSE KONF.INT.', 'MODELLBASERT PERSENTIL' ])
+  assert.deepEqual(output[0], [ 'FILNAVN', 'NAVN', 'KJØNN', 'FØDSELSDATO', 'TESTDATO', 'VIST ALDER', 'LOGALDER', 'MERKNAD', 'MERKNAD 2', 'OPPGAVESKÅRER', 'RASCHSKÅR', 'STANDARDFEIL', 'MINESTIMERT', 'MAKSESTIMERT', 'ALDERSEKVIVALENT', 'NEDRE GRENSE KONF.INT.', 'ØVRE GRENSE KONF.INT.', 'MODELLBASERT PERSENTIL' ])
   assert.equal(exportHeaders.length, 18)
   const newLogs = { Test201_100: '2.325', Test302: '1.386', Test303: '1.407', Test304: '1.397', Test401: '1.386', Test402: '2.890', Test403: '2.888' }
   for (const row of output.slice(1)) {
@@ -129,10 +129,12 @@ for (const [label, bytes] of [
 ]) test(label + ' stops export', async () => {
   const result = await buildDataExport([file('Problem', typeof bytes === 'string' ? Buffer.from(bytes, 'latin1') : bytes)])
   assert.equal(result.kind, 'error'); assert.equal(result.fileName, 'Problem'); assert.equal('bytes' in result, false)
+  assert.equal(result.reason, label === 'unknown identifier' ? 'Ukjent filformat.' : 'Kunne ikke åpne filen.')
+  assert.ok(exportErrorMessage(result.fileName, result.reason).includes(result.reason + ' Rett problemet'))
 })
 
 test('read errors and delimiters in filenames identify the failing file', async () => {
   for (const name of ['Bad\tname', 'Bad\nname']) assert.equal((await buildDataExport([altered({}, name)])).kind, 'error')
   const f = { name: 'Unreadable', webkitRelativePath: 'Mappe/Unreadable', arrayBuffer: async () => { throw Error('private error') } }
-  assert.deepEqual(await buildDataExport([f]), {kind: 'error', fileName: 'Unreadable', reason: 'Filen kunne ikke leses'})
+  assert.deepEqual(await buildDataExport([f]), {kind: 'error', fileName: 'Unreadable', reason: 'Kunne ikke åpne filen.'})
 })

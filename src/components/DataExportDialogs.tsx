@@ -11,7 +11,7 @@ function ExportDownload({ count, cancel, download }: { count: number; cancel: ()
   const [error, setError] = useState<string | null>(null);
   const id = useId();
   return <Modal title="Last ned dataeksport" cancel={cancel}>
-    <p>{count} registreringer er klare for eksport.</p>
+    <p>En datatabell med {count} registreringer fra den valgte mappen er klar. Velg filnavn og klikk «Last ned» for å laste ned tabellen.</p>
     <form onSubmit={event => {
       event.preventDefault();
       const problem = fileNameError(name);
@@ -32,8 +32,17 @@ export function DataExportDialogs({ flow }: { flow: ReturnType<typeof useDataExp
   const { state, cancel } = flow;
   return <>
     <input ref={flow.input} type="file" hidden multiple aria-label="Velg mappe for dataeksport" onChange={flow.selected} />
-    {(state.kind === "choosing" || state.kind === "reading") && <Modal title="Dataeksport" cancel={cancel}>
-      <p role="status">{state.kind === "choosing" ? "Velg en mappe i mappevelgeren." : "Leser og beregner registreringer …"}</p>
+    {state.kind === "introduction" && <Modal title="Dataeksport" cancel={cancel}>
+      <p>Klikk OK for å velge mappe. Nettleseren vil deretter be deg bekrefte valget.</p>
+      <p>Dataene behandles i nettleseren og blir ikke sendt til programmets nettserver.</p>
+      <div className="dialog-actions"><button type="button" onClick={event => {
+        // Close synchronously before the native picker, without losing user activation.
+        event.currentTarget.closest("dialog")?.close();
+        flow.chooseDirectory();
+      }}>OK</button><button type="button" onClick={cancel}>Avbryt</button></div>
+    </Modal>}
+    {state.kind === "reading" && <Modal title="Dataeksport" cancel={cancel}>
+      <p role="status">Leser og beregner registreringer …</p>
       <div className="dialog-actions"><button type="button" onClick={cancel}>Avbryt</button></div>
     </Modal>}
     {state.kind === "ready" && <ExportDownload count={state.count} cancel={cancel} download={flow.download} />}

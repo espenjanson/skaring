@@ -8,7 +8,7 @@ import { DOWNLOAD_NOTICE } from "../file/fileMessages";
 
 type ExportState =
   | { kind: "idle" }
-  | { kind: "choosing" | "reading" }
+  | { kind: "introduction" | "choosing" | "reading" }
   | { kind: "ready"; bytes: Uint8Array; count: number }
   | { kind: "message"; error: boolean; text: string };
 
@@ -18,7 +18,7 @@ export function useDataExport() {
   const generation = useRef(0);
   const active = useRef(false);
   const [state, setState] = useState<ExportState>({ kind: "idle" });
-  const busy = state.kind === "choosing" || state.kind === "reading" || state.kind === "ready";
+  const busy = state.kind === "introduction" || state.kind === "choosing" || state.kind === "reading" || state.kind === "ready";
 
   function cancel() {
     generation.current++;
@@ -38,9 +38,18 @@ export function useDataExport() {
   });
 
   function start() {
+    if (active.current) return;
+    active.current = true;
+    setState({ kind: "introduction" });
+  }
+
+  /** Called directly by OK so the native picker retains user activation. */
+  function chooseDirectory() {
+    if (state.kind !== "introduction") return;
     const element = input.current;
-    if (!element || active.current) return;
+    if (!element) { cancel(); return; }
     if (!("webkitdirectory" in element)) {
+      active.current = false;
       setState({ kind: "message", error: true, text: "Nettleseren støtter ikke mappevalg. Bruk en oppdatert nettleser." });
       return;
     }
@@ -58,7 +67,7 @@ export function useDataExport() {
   async function selected(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.currentTarget.files ?? []);
     event.currentTarget.value = "";
-    if (!active.current) return;
+    if (!active.current || state.kind !== "choosing") return;
     const token = generation.current;
     setState({ kind: "reading" });
     const result = await buildDataExport(files, () => generation.current !== token);
@@ -75,5 +84,5 @@ export function useDataExport() {
     const outcome = initiateDownload(state.bytes, name);
     setState({ kind: "message", error: outcome === "failed", text: outcome === "started" ? DOWNLOAD_NOTICE : "Kunne ikke starte nedlastingen av eksportfilen. Prøv igjen." });
   }
-  return { input, state, busy, start, selected, cancel, download };
+  return { input, state, busy, start, chooseDirectory, selected, cancel, download };
 }
