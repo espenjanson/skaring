@@ -7,7 +7,7 @@ import type { SaveValidationDecision } from "../domain/saveValidation";
 import { fileNameError } from "../file/fileName";
 import { fileNameMessage } from "../file/fileMessages";
 
-function Modal({ title, cancel, children }: { title: string; cancel: () => void; children: ReactNode }) {
+export function Modal({ title, cancel, children }: { title: string; cancel: () => void; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {

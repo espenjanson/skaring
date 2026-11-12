@@ -73,6 +73,16 @@ export function manualAgeError(text: string): string | null {
     : null
 }
 
+/** Resolve statistical and displayed age together, without changing source fields. */
+export function resolveCalculationAge(data: Partial<Pick<Registration, "birthDate" | "testDate" | "age" | "ageSource">>): { years: number; display: string } | null {
+  const calculated = dateAge(data.birthDate ?? "", data.testDate ?? "")
+  if (calculated.kind === "valid") return { years: calculated.exactYears, display: calculated.displayAge }
+  const age = data.age ?? ""
+  if (data.ageSource === "automatic" || age === "" || manualAgeError(age)) return null
+  const [years, months] = age.split(":").map(Number)
+  return { years: years + months / 12 + 1 / 24, display: `${years}:${months}` }
+}
+
 /** Normalize only accepted manual ages on blur; preserve rejected input for correction. */
 export function finishManualAge(data: Registration): Registration {
   if (data.ageSource === "automatic" || data.age === "" || manualAgeError(data.age)) return data

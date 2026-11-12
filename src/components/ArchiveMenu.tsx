@@ -9,6 +9,7 @@ interface ArchiveMenuProps {
   open: () => void;
   download: () => void;
   showResult: () => void;
+  exportData: () => void;
 }
 
 /** Presents the existing registration actions without owning file workflow state. */
@@ -90,7 +91,7 @@ export function ArchiveMenu(props: ArchiveMenuProps) {
       </div>
       <div role="separator" />
       <div role="group" aria-label="Dataexport">
-        <button type="button" role="menuitem" tabIndex={-1} disabled>Eksporter data…</button>
+        <button type="button" role="menuitem" tabIndex={-1} onClick={() => run(props.exportData)}>Eksporter data…</button>
       </div>
     </div>}
   </div>;

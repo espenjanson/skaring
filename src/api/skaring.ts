@@ -13,7 +13,7 @@ export interface LegacyFileAccess {
 }
 
 import type { Registration } from "../domain/registration";
-import { dateAge, manualAgeError } from "../domain/dateAge";
+import { resolveCalculationAge } from "../domain/dateAge";
 
 /** Optional age fields keep the score-only calculation entry point usable. */
 export type CalculationRegistration = Pick<Registration, "items"> &
@@ -292,25 +292,10 @@ export class Skaring {
 
   /** Resolve age independently of the truncated display text and editing events. */
   private setCalculationAge(registration: CalculationRegistration): void {
-    const calculated = dateAge(
-      registration.birthDate ?? "",
-      registration.testDate ?? ""
-    );
-    if (calculated.kind === "valid") {
-      this.gAlder = calculated.exactYears;
-      this.alder_value = calculated.displayAge;
-      return;
-    }
-    const age = registration.age ?? "";
-    // A stale automatic display value must never become a manual age.
-    if (
-      registration.ageSource !== "automatic" &&
-      age !== "" &&
-      manualAgeError(age) === null
-    ) {
-      const [years, months] = age.split(":").map(Number);
-      this.gAlder = years + months / 12 + 1 / 24;
-      this.alder_value = `${years}:${months}`;
+    const age = resolveCalculationAge(registration);
+    if (age) {
+      this.gAlder = age.years;
+      this.alder_value = age.display;
     }
   }
 

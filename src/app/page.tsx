@@ -7,6 +7,8 @@ import { initialResultSettings } from "../domain/results"
 import { itemLabels, singleLine, isItemCharacter } from "../domain/registration"
 import { FileDialogs } from "../components/FileDialogs"
 import { useRegistrationFiles } from "./useRegistrationFiles"
+import { useDataExport } from "./useDataExport"
+import { DataExportDialogs } from "../components/DataExportDialogs"
 import { registrationCaption } from "../file/fileMessages"
 import "./registration.css"
 import { DateField, dateAge, editRegistrationDate, finishRegistrationDate, finishManualAge, manualAgeError, parseDate } from "../domain/dateAge"
@@ -23,6 +25,7 @@ export default function Page() {
     }
   }, [resetChecked])
   const files = useRegistrationFiles(onAccepted)
+  const dataExport = useDataExport()
   const data = files.state?.current
   const setData = files.edit
   const dirty = files.state?.status === "Ulagrede endringer"
@@ -45,7 +48,7 @@ export default function Page() {
   }
   if (!data || !files.state) return <main className="registration-window">Laster skjema …</main>
   const phase = files.state.phase
-  const busy = phase.kind !== "idle"
+  const busy = phase.kind !== "idle" || dataExport.busy
   function change(field: "name" | "note" | "note2" | "age", value: string) {
     setData(current => current && ({ ...current, [field]: singleLine(value) }))
   }
@@ -72,7 +75,7 @@ export default function Page() {
     <div hidden={view !== "registration"}>
     <div className="window-caption">{registrationCaption(files.state)}</div>
     <div className="menu-message-row">
-    <ArchiveMenu busy={busy} newRegistration={files.newRegistration} open={files.open} download={files.download} showResult={showResult} />
+    <ArchiveMenu busy={busy} newRegistration={files.newRegistration} open={files.open} download={files.download} showResult={showResult} exportData={dataExport.start} />
     <div className="header-messages" role="region" aria-label="Meldinger" tabIndex={files.message || phase.kind === "reading" || phase.kind === "choose-file" ? 0 : undefined}>
     {files.message && <div className={`file-feedback${files.message.kind === "error" ? " file-error" : ""}`} role={files.message.kind === "error" ? "alert" : "status"}><span>{files.message.text}</span><button type="button" onClick={files.dismissMessage}>Lukk melding</button></div>}
     {(phase.kind === "reading" || phase.kind === "choose-file") && <div className="file-feedback" role="status">
@@ -125,5 +128,6 @@ export default function Page() {
     </div>
     {view === "result" && <ResultView back={() => setView("registration")} registration={data} settings={resultSettings} onSettingsChange={setResultSettings} fileName={files.state.association?.fileName} />}
     <FileDialogs phase={phase} cancel={files.cancel} nameChosen={files.nameChosen} validationChosen={files.validationChosen} formatChosen={files.formatChosen} unsavedChosen={files.unsavedChosen} clearChosen={files.clearChosen} />
+    <DataExportDialogs flow={dataExport} />
   </main>
 }

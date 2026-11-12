@@ -16,6 +16,7 @@ function component(relative, overrides = {}) {
   const loaded = { exports: {} }
   const localRequire = name => {
     if (overrides[name]) return overrides[name]
+    if (name === './useDataExport') return { useDataExport: () => ({ state: {kind: 'idle'}, input: {current: null}, busy: false }) }
     if (name.endsWith('.css')) return {}
     if (!name.startsWith('.')) return require(name)
     const target = path.posix.normalize(path.posix.join(path.posix.dirname(relative), name))

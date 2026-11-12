@@ -46,7 +46,7 @@ async function roundTrip(page, viaMenu = false) {
   await page.getByRole('heading', { name: 'Skåring av motoriske oppgaver i NUBU 4-16', exact: true }).waitFor()
 }
 
-test('Arkiv has ordered command groups, two separators and disabled export; old top buttons are absent', async t => {
+test('Arkiv has ordered command groups, two separators and enabled export; old top buttons are absent', async t => {
   const page = await pageFor(t)
   assert.deepEqual(await page.locator('.archive-bar button').allTextContents(), ['Arkiv'])
   assert.equal(await page.locator('.file-commands').count(), 0)
@@ -57,7 +57,7 @@ test('Arkiv has ordered command groups, two separators and disabled export; old 
   assert.deepEqual(await menu.getByRole('group').evaluateAll(nodes => nodes.map(n => [n.getAttribute('aria-label'), n.textContent])), [
     ['Registrering', 'NyÅpne…Last ned…'], ['Resultat', 'Vis resultat'], ['Dataexport', 'Eksporter data…'],
   ])
-  assert.equal(await page.getByRole('menuitem', { name: 'Eksporter data…' }).isDisabled(), true)
+  assert.equal(await page.getByRole('menuitem', { name: 'Eksporter data…' }).isDisabled(), false)
   await page.getByRole('heading').click()
   assert.equal(await menu.count(), 0)
 })
@@ -71,7 +71,7 @@ test('mouse and keyboard open, traverse, activate and close the menu with usable
   await page.keyboard.press('ArrowDown')
   assert.equal(await page.getByRole('menuitem', { name: 'Åpne…' }).evaluate(n => n === document.activeElement), true)
   await page.keyboard.press('End')
-  assert.equal(await page.getByRole('menuitem', { name: 'Vis resultat' }).evaluate(n => n === document.activeElement), true)
+  assert.equal(await page.getByRole('menuitem', { name: 'Eksporter data…' }).evaluate(n => n === document.activeElement), true)
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Escape')
@@ -83,6 +83,7 @@ test('mouse and keyboard open, traverse, activate and close the menu with usable
   await trigger.focus()
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('End')
+  await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Tilbake', exact: true }).click()
   assert.equal(await trigger.evaluate(n => n === document.activeElement), true)
@@ -93,7 +94,7 @@ test('both result commands preserve new, opened, downloaded and dirty registrati
   let reloads = 0, popups = 0
   page.on('load', () => reloads++)
   page.on('popup', () => popups++)
-  const input = await page.locator('input[type=file]').elementHandle()
+  const input = await page.getByLabel('Velg registreringsfil').elementHandle()
   async function unchanged() {
     const before = await snapshot(page)
     for (let i = 0; i < 4; i++) {
@@ -222,6 +223,7 @@ test('Arkiv and Tilbake share typography, frameless hover and visible keyboard f
   await focused(trigger)
   await page.keyboard.press('Enter')
   await page.keyboard.press('End')
+  await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Enter')
   const back = page.getByRole('button', { name: 'Tilbake', exact: true })
   await frameless(back)
