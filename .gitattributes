@@ -1,0 +1,2 @@
+# Preserve verification bytes, encodings, line endings, and embedded SHA-256 references.
+simulation/** -text whitespace=cr-at-eol
